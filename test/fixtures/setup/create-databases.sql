@@ -1,0 +1,3 @@
+CREATE DATABASE "database";
+
+CREATE DATABASE "test";
