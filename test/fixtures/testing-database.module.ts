@@ -11,6 +11,7 @@ import { OrganisationMembershipEntity } from '@/organisation-memberships/organis
 import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/entity';
 import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/entity';
 import { OrganisationOwnershipHistoryEntity } from '@/organisation-ownership-history/organisation-ownership-history.entity';
+import { OrganisationApiKeyEntity } from '@/organisation-api-key/organisation-api-key.entity';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { OrganisationOwnershipHistoryEntity } from '@/organisation-ownership-his
       OrganisationMembershipInvitationEntity,
       OrganisationMembershipSuspensionHistoryEntity,
       OrganisationOwnershipHistoryEntity,
+      OrganisationApiKeyEntity,
     ]),
   ],
   exports: [
