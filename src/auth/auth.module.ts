@@ -17,6 +17,7 @@ import { RoleEntity } from '@/roles/roles.entity';
 import { OrganisationOwnershipHistoryEntity } from '@/organisation-ownership-history/organisation-ownership-history.entity';
 import { DatabaseModule } from '@/database/database.module';
 import { OrganisationModule } from '@/organisations/module';
+import { LoginLockoutModule } from '@/login-lockout/login-lockout.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { OrganisationModule } from '@/organisations/module';
     CustomJwtModule,
     UserSessionModule,
     OrganisationModule,
+    LoginLockoutModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],
