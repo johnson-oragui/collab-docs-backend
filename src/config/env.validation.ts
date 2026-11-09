@@ -1,5 +1,11 @@
 import { plainToInstance } from 'class-transformer';
-import { IsEnum, IsPositive, IsString, validateSync } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsPositive,
+  IsString,
+  validateSync,
+} from 'class-validator';
 
 enum Environment {
   Development = 'development',
@@ -13,9 +19,6 @@ class EnvironmentVariables {
 
   @IsPositive()
   declare PORT: number;
-
-  @IsString()
-  declare TEST: string;
 
   @IsString()
   declare DB_HOST: string;
@@ -33,9 +36,6 @@ class EnvironmentVariables {
   declare DB_NAME: string;
 
   @IsString()
-  declare TEST_DB_NAME: string;
-
-  @IsString()
   declare JWT_SECRET: string;
 
   @IsString()
@@ -48,10 +48,17 @@ class EnvironmentVariables {
   declare JWT_EXPIRY: string;
 
   @IsString()
+  declare REFRESH_JWT_EXPIRY: string;
+
+  @IsString()
   declare AUTH_COOKIE_NAME: string;
 
   @IsString()
   declare AUTH_REFRESH_COOKIE_NAME: string;
+
+  @IsOptional()
+  @IsString()
+  declare CORS_ORIGIN?: string;
 }
 
 export function validateEnvConfig(

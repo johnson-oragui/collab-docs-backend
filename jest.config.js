@@ -6,17 +6,15 @@ module.exports = {
 
   roots: ['<rootDir>/src', '<rootDir>/test'],
 
-  testMatch: [
-    '**/?(*.)+(spec|test).ts'
-  ],
+  testMatch: ['**/?(*.)+(spec|test).ts'],
+  // Keep E2E tests out of npm test.
+  testPathIgnorePatterns: ['\\.e2e-spec\\.ts$'],
 
   testTimeout: 30000,
   moduleFileExtensions: ['ts', 'js', 'json'],
   setupFiles: ['<rootDir>/test/jest.setup.ts'],
+  globalSetup: '<rootDir>/test/jest-global-setup.ts',
 
-  transformIgnorePatterns: [
-    'node_modules/(?!(uuid)/)',
-  ],
   transform: {
     '^.+\\.(t|j)s$': [
       'ts-jest',

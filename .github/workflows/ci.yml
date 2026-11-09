@@ -10,11 +10,11 @@ jobs:
 
     services:
       postgres:
-        image: postgres:latest
+        image: postgres:17
         env:
-          POSTGRES_USER: 'username'
-          POSTGRES_PASSWORD: 'password'
-          POSTGRES_DB: 'postgres'
+          POSTGRES_USER: username
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: postgres
         ports:
           - 5432:5432
         options: >-
@@ -22,8 +22,9 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
       redis:
-        image: redis:latest
+        image: redis:7
         env:
           REDIS_URL: redis://localhost:6379
         ports:
@@ -34,17 +35,18 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Copy env file
+      - name: Copy application environment file
         run: cp .env.sample .env
 
       - name: Install backend dependencies
@@ -99,27 +101,51 @@ jobs:
           DB_USER: username
           DB_PASSWORD: password
 
-      
+      - name: Create test environment file
+        run: |
+          cat > .env.test <<'EOF'
+          PORT=7005
+          NODE_ENV=test
+          TEST=true
 
-      - name: Run migrations
+          DB_HOST=localhost
+          DB_PORT=5432
+          DB_USER=username
+          DB_PASSWORD=password
+          DB_NAME=test
+
+          JWT_SECRET=ci-test-secret-that-is-long-enough-for-testing
+          JWT_ISSUER=collabdocs
+          JWT_AUDIENCE=collabdocs-client
+          JWT_EXPIRY=10m
+          REFRESH_JWT_EXPIRY=30d
+
+          AUTH_COOKIE_NAME=access_token
+          AUTH_REFRESH_COOKIE_NAME=refresh_token
+
+          CORS_ORIGIN=http://localhost:3000,http://localhost:3001
+
+          REDIS_URL=redis://localhost:6379/1
+          EOF
+
+      - name: Verify test environment
+        run: |
+          test -f .env.test
+          grep -E '^(NODE_ENV|TEST|DB_HOST|DB_PORT|DB_NAME)=' .env.test
+
+      - name: Run application database migrations
         run: npm run migration:run
         env:
+          NODE_ENV: development
           TEST: 'false'
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: username
           DB_PASSWORD: password
           DB_NAME: database
-          TEST_DB_NAME: test
-          REDIS_URL: redis://localhost:6379/0
 
-      - name: Run tests
+      - name: Run unit tests
         run: npm test
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: username
-          DB_PASSWORD: password
-          DB_NAME: database
-          TEST_DB_NAME: test
-          REDIS_URL: redis://localhost:6379/1
+
+      - name: Run E2E tests
+        run: npm run test:e2e

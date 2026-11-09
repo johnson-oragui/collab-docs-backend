@@ -1,20 +1,16 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PermissionEntity } from './permissions.entity';
 
 @Injectable()
-export class PermissionsSeedService implements OnModuleInit {
+export class PermissionsSeedService {
   private readonly logger = new Logger(PermissionsSeedService.name);
 
   constructor(
     @InjectRepository(PermissionEntity)
     private readonly permissionRepository: Repository<PermissionEntity>,
   ) {}
-
-  async onModuleInit() {
-    await this.seedPermissions();
-  }
 
   async seedPermissions() {
     this.logger.log('Syncing permissions with PermissionEnum...');

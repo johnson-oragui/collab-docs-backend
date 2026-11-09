@@ -4,10 +4,10 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import jwt, { SignOptions } from 'jsonwebtoken';
+import { IJWTSignPayloadRequest, TDecodedUser } from './jwt.interface';
 
 type StringValue =
-  | `${number}${'s' | 'm' | 'h' | 'd' | 'w' | 'y'}`
-  | `${number}`;
+  `${number}${'s' | 'm' | 'h' | 'd' | 'w' | 'y'}` | `${number}`;
 
 @Injectable()
 export class CustomJwtService {
@@ -25,12 +25,12 @@ export class CustomJwtService {
     );
   }
 
-  sign(payload: Record<string, any>): string {
+  sign(payload: IJWTSignPayloadRequest): string {
     const options: SignOptions = {
       expiresIn: this.expiresIn as StringValue,
       issuer: this.issuer,
       audience: this.audience,
-      subject: (payload['_id'] || payload['id']) as string,
+      subject: payload.id,
     };
 
     const token = jwt.sign(payload, this.secret, options);
@@ -38,12 +38,12 @@ export class CustomJwtService {
     return token;
   }
 
-  verify(token: string): jwt.JwtPayload {
+  verify(token: string): TDecodedUser {
     try {
       return jwt.verify(token, this.secret, {
         issuer: this.issuer,
         audience: this.audience,
-      }) as jwt.JwtPayload;
+      }) as TDecodedUser;
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }

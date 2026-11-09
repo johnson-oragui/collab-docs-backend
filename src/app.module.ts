@@ -9,7 +9,6 @@ import { LoggerMiddleware } from './commons/middlewares/logging.middleware';
 import { CatchAllMiddleware } from './commons/middlewares/catchall.middleware';
 import { UserAgentGuard } from './commons/guards/userAgent.guards';
 import UserModule from './user/user.module';
-import { CustomJwtService } from './jwt-service/jwt.service';
 import { CustomJwtModule } from './jwt-service/jwt.module';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
@@ -22,6 +21,8 @@ import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { OrganisationOwnershipHistoryModule } from './organisation-ownership-history/organisation-ownership-history.module';
 import { OrganisationApiKeyModule } from './organisation-api-key/organisation-api-key.module';
+import { UserSessionTokenModule } from './user-session-token/user-session-token.module';
+import { UserSessionModule } from './user_sessions/user-session.module';
 
 @Module({
   imports: [
@@ -39,6 +40,8 @@ import { OrganisationApiKeyModule } from './organisation-api-key/organisation-ap
     PermissionsModule,
     OrganisationOwnershipHistoryModule,
     OrganisationApiKeyModule,
+    UserSessionTokenModule,
+    UserSessionModule,
   ],
   controllers: [AppController],
   providers: [
@@ -47,7 +50,6 @@ import { OrganisationApiKeyModule } from './organisation-api-key/organisation-ap
       provide: APP_GUARD,
       useClass: UserAgentGuard,
     },
-    CustomJwtService,
   ],
 })
 export class AppModule {

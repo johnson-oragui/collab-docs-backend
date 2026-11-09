@@ -3,6 +3,7 @@ import { CustomBaseEntity } from '../database/base.entity';
 import { ProfileEntity } from '../profile/profile.entity';
 import { OrganisationMembershipEntity } from '../organisation-memberships/organisation-memberships.entity';
 import { OrganisationApiKeyEntity } from '@/organisation-api-key/organisation-api-key.entity';
+import { UserSessionEntity } from '@/user_sessions/user-session.entity';
 
 @Entity('collabdocs_users')
 export class UserEntity extends CustomBaseEntity {
@@ -12,8 +13,8 @@ export class UserEntity extends CustomBaseEntity {
   @Column({ name: 'first_name', nullable: true })
   declare firstName: string;
 
-  @Column({ name: 'password', nullable: true })
-  declare password: string;
+  @Column({ name: 'password', nullable: true, type: 'varchar', length: 255 })
+  declare password?: string | null;
 
   @Column({ name: 'last_name', nullable: true })
   declare lastName: string;
@@ -44,4 +45,7 @@ export class UserEntity extends CustomBaseEntity {
     { cascade: true },
   )
   declare organisationApiKeys: OrganisationApiKeyEntity[];
+
+  @OneToMany(() => UserSessionEntity, (session) => session.user)
+  declare sessions: UserSessionEntity[];
 }

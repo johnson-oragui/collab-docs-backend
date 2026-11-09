@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrganisationOwnershipHistoryEntity } from './organisation-ownership-history.entity';
 import { UserEntity } from '@/user/user.entity';
 import { OrganisationEntity } from '@/organisations/organisations.entity';
-import { OrganisationsService } from '@/organisations/organisation.service';
 
 @Module({
   imports: [
@@ -13,7 +12,5 @@ import { OrganisationsService } from '@/organisations/organisation.service';
       OrganisationEntity,
     ]),
   ],
-  providers: [OrganisationsService],
-  exports:[OrganisationsService]
 })
 export class OrganisationOwnershipHistoryModule {}

@@ -10,7 +10,7 @@ export class CatchAllMiddleware implements NestMiddleware {
     }
     if (
       req.path.startsWith('/api') ||
-      ['/favicon.ico', '/'].includes(req.path)
+      ['/favicon.ico', '/'].includes(req.path) || req.path === "/"
     ) {
       return next();
     }

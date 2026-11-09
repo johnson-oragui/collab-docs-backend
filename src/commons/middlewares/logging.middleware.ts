@@ -35,8 +35,9 @@ export class LoggerMiddleware implements NestMiddleware {
           path: req.path,
           method: req.method,
           statusCode: res.statusCode,
-          userId: (req['user'] as Record<string, string>)?._id || 'Guest',
-          role: (req['user'] as Record<string, string>)?.role || null,
+          userId: req.decodedUser?.sub || 'Guest',
+          organisationRole: req.decodedUser?.organisationRole || null,
+          organisationId: req.decodedUser?.organisationId || null,
           requestId,
         };
         logger.info('OutBound Response ⏩⏩⏩⏩⏩⏩⏩⏩⏩⏩⏩⏩', responseData);

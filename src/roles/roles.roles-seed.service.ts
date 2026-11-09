@@ -7,6 +7,7 @@ import {
   PermissionEnum,
 } from '../permissions/permissions.entity';
 import { RoleEnum, RoleScopeEnum } from '../database/database.enums';
+import { PermissionsSeedService } from '@/permissions/permissions-seed.service';
 
 @Injectable()
 export class RolesSeedService implements OnModuleInit {
@@ -17,9 +18,11 @@ export class RolesSeedService implements OnModuleInit {
     private readonly roleRepository: Repository<RoleEntity>,
     @InjectRepository(PermissionEntity)
     private readonly permissionRepository: Repository<PermissionEntity>,
+    private readonly permissionsSeedService: PermissionsSeedService,
   ) {}
 
   async onModuleInit() {
+    await this.permissionsSeedService.seedPermissions();
     await this.seedRoles();
   }
 

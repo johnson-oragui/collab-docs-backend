@@ -1,8 +1,20 @@
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 import { DatabaseNamingStrategy } from './naming.strategy';
+import { resolve } from 'path';
 
-config();
+const isTestEnv =
+  process.env.NODE_ENV === 'test' || process.env.TEST === 'true';
+const envFile = isTestEnv ? '.env.test' : '.env';
+
+config(
+  isTestEnv
+    ? { path: resolve(process.cwd(), envFile), override: true }
+    : undefined,
+);
+
+console.log(`[DataSource] Loading environment from: ${envFile}`);
+console.log(`[DataSource] Connecting to database: ${process.env.DB_NAME}`);
 
 export default new DataSource({
   type: 'postgres',
@@ -11,8 +23,6 @@ export default new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  // Point to compiled JavaScript files in 'dist' for production/CLI safety
-  // Support both conventional entity filenames and entity.ts filenames.
   // __dirname resolves to src/database during ts-node execution
   // and dist/database after compilation.
   entities: [

@@ -37,6 +37,8 @@ export async function createOrganisationMembershipFixture(
       name: `Acme Corp ${id}`,
       slug: `acme-corp-${id}`,
       owner: user,
+      creator: user,
+      email: `test-${id}@collabdocs.com`,
     }),
   );
 

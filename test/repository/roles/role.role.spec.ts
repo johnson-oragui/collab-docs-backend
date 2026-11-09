@@ -1,28 +1,37 @@
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
 import { createTestingModule } from '@/test/fixtures/create-testing-module';
 import { RoleEnum, RoleScopeEnum } from '@/database/database.enums';
 import { RoleEntity } from '@/roles/roles.entity';
+import { TestingModule } from '@nestjs/testing';
 
 describe('Roles Entities Integration Tests', () => {
   let dataSource: DataSource;
+  let module: TestingModule;
 
   let roleRepository: Repository<RoleEntity>;
 
-  const uniqueId = () =>
-    `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  const roleIds: string[] = [];
 
   beforeAll(async () => {
     const testing = await createTestingModule();
+    module = testing.module;
 
     dataSource = testing.dataSource;
 
     roleRepository = dataSource.getRepository(RoleEntity);
   });
 
+  afterEach(async () => {
+    if (roleIds.length) {
+      await roleRepository.delete({ id: In([...roleIds]) });
+      roleIds.length = 0;
+    }
+  });
+
   afterAll(async () => {
-    await dataSource.dropDatabase();
     await dataSource.destroy();
+    await module.close();
   });
 
   describe('RoleEntity', () => {
@@ -41,6 +50,8 @@ describe('Roles Entities Integration Tests', () => {
             scope: RoleScopeEnum.ORGANISATION,
           }),
         ));
+
+      roleIds.push(savedRole.id);
 
       const foundRole = await roleRepository.findOneBy({
         id: savedRole.id,

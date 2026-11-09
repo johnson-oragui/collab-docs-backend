@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -24,12 +21,19 @@ async function bootstrap() {
       },
     );
 
+    const configService = app.get(ConfigService);
+
     app.enableCors({
-      origin: '*',
+      origin: configService.get<string>('CORS_ORIGIN', '')?.split(','),
       methods: 'GET,POST,PATCH,PUT,DELETE',
       credentials: true,
-      allowedHeaders: 'Content-Type, Accept, Authorization',
-      exposedHeaders: ['x-request-id'],
+      allowedHeaders: [
+        'Accept',
+        'Authorization',
+        'Content-Type',
+        'X-REFRESH-TOKEN',
+      ],
+      exposedHeaders: ['x-request-id', 'X-REFRESH-TOKEN', 'X-REQUEST-ID'],
     });
     app.setGlobalPrefix('');
     app.enableVersioning();
@@ -76,8 +80,6 @@ async function bootstrap() {
       },
       useGlobalPrefix: true,
     });
-
-    const configService = app.get(ConfigService);
 
     process.on('unhandledRejection', (reason) => {
       console.error('Unhandled Rejection at:', reason);
