@@ -1,7 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
+  HttpException,
   Injectable,
 } from '@nestjs/common';
 
@@ -9,8 +9,9 @@ import {
 export class UserAgentGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest<Request>();
-    if (!req.headers['user-agent']) {
-      throw new ForbiddenException('Invalid user-agent');
+    const userAgent = req.headers['user-agent'];
+    if (userAgent === null || !userAgent || userAgent?.trim() === '') {
+      throw new HttpException({ message: 'Forbidden', statusCode: 403 }, 403);
     }
     return true;
   }
