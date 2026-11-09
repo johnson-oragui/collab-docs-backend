@@ -1,4 +1,4 @@
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
 import { OrganisationEntity } from '@/organisations/organisations.entity';
 import { createTestingModule } from '@/test/fixtures/create-testing-module';
@@ -12,16 +12,28 @@ import {
 import { OrganisationOwnershipHistoryEntity } from '@/organisation-ownership-history/organisation-ownership-history.entity';
 import { OrganisationsService } from '@/organisations/organisation.service';
 import { RoleEntity } from '@/roles/roles.entity';
+import { TestingModule } from '@nestjs/testing';
 
 describe('OrganisationsService - Ownership Transfer Rollback', () => {
+  let module: TestingModule;
   let dataSource: DataSource;
   let orgRepository: Repository<OrganisationEntity>;
   let userRepository: Repository<UserEntity>;
   let organisationsService: OrganisationsService;
   let roleRepository: Repository<RoleEntity>;
+  let membershipRepo: Repository<OrganisationMembershipEntity>;
+
+  const userIds: string[] = [];
+  const memberIds: string[] = [];
+  const roleIds: string[] = [];
+  const organisationIds: string[] = [];
+
+  const uniqueId = () =>
+    `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
   beforeAll(async () => {
     const testing = await createTestingModule();
+    module = testing.module;
 
     dataSource = testing.dataSource;
     orgRepository = dataSource.getRepository(OrganisationEntity);
@@ -29,26 +41,56 @@ describe('OrganisationsService - Ownership Transfer Rollback', () => {
     organisationsService =
       testing.module.get<OrganisationsService>(OrganisationsService);
     roleRepository = dataSource.getRepository(RoleEntity);
+    membershipRepo = dataSource.getRepository(OrganisationMembershipEntity);
+  });
+
+  afterEach(async () => {
+    if (memberIds.length) {
+      await membershipRepo.delete({ id: In([...memberIds]) });
+      memberIds.length = 0;
+    }
+
+    if (organisationIds.length) {
+      await orgRepository.delete({ id: In([...organisationIds]) });
+      organisationIds.length = 0;
+    }
+
+    if (userIds.length) {
+      await userRepository.delete({ id: In([...userIds]) });
+      userIds.length = 0;
+    }
+
+    if (roleIds.length) {
+      await roleRepository.delete({ id: In([...roleIds]) });
+      roleIds.length = 0;
+    }
   });
 
   afterAll(async () => {
-    await dataSource.dropDatabase();
     await dataSource.destroy();
+    await module.close();
   });
 
   it('should roll back owner update if saving ownership history fails midway', async () => {
-    const owner = userRepository.create({ email: 'owner@collabdocs.com' });
+    const owner = userRepository.create({
+      email: `${uniqueId()}@collabdocs.com`,
+    });
     const newOwner = userRepository.create({
-      email: 'newowner@collabdocs.com',
+      email: `${uniqueId()}@collabdocs.com`,
     });
     await userRepository.save([owner, newOwner]);
+    userIds.concat([owner.id, newOwner.id]);
 
     const org = orgRepository.create({
-      name: 'Rollback Test Org',
+      name: `Rollback ${uniqueId()} Test Org`,
       slug: `rollback-org${Date.now()}`,
       owner: owner,
+      creator: owner,
+      email: `test-${uniqueId()}@collabdocs.com`,
     });
     await orgRepository.save(org);
+
+    organisationIds.push(org?.id ?? '');
 
     let role = await roleRepository.findOne({
       where: {
@@ -65,10 +107,9 @@ describe('OrganisationsService - Ownership Transfer Rollback', () => {
       );
     }
 
-    const membershipRepo = dataSource.getRepository(
-      OrganisationMembershipEntity,
-    );
-    await membershipRepo.save(
+    roleIds.push(role.id);
+
+    const member = await membershipRepo.save(
       membershipRepo.create({
         user: newOwner,
         organisation: org,
@@ -77,12 +118,14 @@ describe('OrganisationsService - Ownership Transfer Rollback', () => {
       }),
     );
 
+    memberIds.push(member.id);
+
     // Mock the DataSource transaction manager to throw an error
     // *after* the organisation owner is updated, simulating a failure when saving history.
     const originalTransaction = dataSource.transaction.bind(dataSource);
     jest
       .spyOn(dataSource, 'transaction')
-      .mockImplementation(async (runInTransaction) => {
+      .mockImplementation(async (runInTransaction: any) => {
         return originalTransaction(async (manager) => {
           // Spy on manager.save to intercept OrganisationOwnershipHistoryEntity save and crash
           const originalManagerSave = manager.save.bind(manager);

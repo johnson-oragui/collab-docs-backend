@@ -1,4 +1,4 @@
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
 import { UserEntity } from '@/user/user.entity';
 import { OrganisationEntity } from '@/organisations/organisations.entity';
@@ -9,6 +9,7 @@ import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_
 
 import { createOrganisationMembershipFixture } from '@/test/fixtures/organisation-membership.fixture';
 import { createTestingModule } from '@/test/fixtures/create-testing-module';
+import { TestingModule } from '@nestjs/testing';
 
 describe('Organisation Memberships Entities Integration Tests', () => {
   let dataSource: DataSource;
@@ -19,10 +20,18 @@ describe('Organisation Memberships Entities Integration Tests', () => {
   let membershipRepository: Repository<OrganisationMembershipEntity>;
   let invitationRepository: Repository<OrganisationMembershipInvitationEntity>;
   let historyRepository: Repository<OrganisationMembershipSuspensionHistoryEntity>;
+  let module: TestingModule;
 
+  const userIds: string[] = [];
+  const memberIds: string[] = [];
+  const roleIds: string[] = [];
+  const organisationIds: string[] = [];
+  const historyIds: string[] = [];
+  const invitationIds: string[] = [];
 
   beforeAll(async () => {
     const testing = await createTestingModule();
+    module = testing.module;
 
     dataSource = testing.dataSource;
 
@@ -40,14 +49,44 @@ describe('Organisation Memberships Entities Integration Tests', () => {
     );
   });
 
+  afterEach(async () => {
+    if (historyIds.length) {
+      await historyRepository.delete({ id: In([...historyIds]) });
+      historyIds.length = 0;
+    }
+    if (invitationIds.length) {
+      await invitationRepository.delete({ id: In([...invitationIds]) });
+      invitationIds.length = 0;
+    }
+    if (memberIds.length) {
+      await membershipRepository.delete({ id: In([...memberIds]) });
+      memberIds.length = 0;
+    }
+
+    if (roleIds.length) {
+      await roleRepository.delete({ id: In([...roleIds]) });
+      roleIds.length = 0;
+    }
+
+    if (organisationIds.length) {
+      await organisationRepository.delete({ id: In([...organisationIds]) });
+      organisationIds.length = 0;
+    }
+
+    if (userIds.length) {
+      await userRepository.delete({ id: In([...userIds]) });
+      userIds.length = 0;
+    }
+  });
+
   afterAll(async () => {
-    await dataSource.dropDatabase();
     await dataSource.destroy();
+    await module.close();
   });
 
   describe('OrganisationMembershipSuspensionHistoryEntity', () => {
     it('should create and retrieve a suspension history record', async () => {
-      const { membership } =
+      const { membership, organisation, role, user } =
         await createOrganisationMembershipFixture(dataSource);
 
       const suspendedTill = new Date(Date.now() + 7 * 86400000);
@@ -59,6 +98,7 @@ describe('Organisation Memberships Entities Integration Tests', () => {
           membership,
         }),
       );
+      historyIds.push(history.id)
 
       const foundHistory = await historyRepository.findOne({
         where: { id: history.id },
@@ -66,6 +106,10 @@ describe('Organisation Memberships Entities Integration Tests', () => {
           membership: true,
         },
       });
+      userIds.push(user.id);
+      organisationIds.push(organisation.id);
+      memberIds.push(membership.id);
+      roleIds.push(role.id);
 
       expect(foundHistory).toBeDefined();
       expect(foundHistory?.reason).toBe('Violation of terms');
