@@ -9,25 +9,9 @@ import { DatabaseNamingStrategy } from './naming.strategy';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const testConfig = configService.get<boolean | string>('TEST');
+        const dbName = configService.get<string>('DB_NAME');
 
-        const isTest =
-          typeof testConfig === 'boolean'
-            ? testConfig
-            : typeof testConfig === 'string'
-              ? testConfig.toLowerCase() === 'true'
-              : false;
-
-        const dbName = isTest
-          ? configService.get<string>('TEST_DB_NAME')
-          : configService.get<string>('DB_NAME');
-
-        console.log('isTest:', isTest);
-        console.log('dbName:', dbName);
-
-        if (isTest && !configService.get<string>('TEST_DB_NAME')) {
-          throw new Error('TEST_DB_NAME must be configured when TEST=true');
-        }
+        console.log('[DATABASE MODULE] DB NAME:', dbName);
 
         return {
           type: 'postgres' as const,
@@ -35,18 +19,18 @@ import { DatabaseNamingStrategy } from './naming.strategy';
           port: Number(configService.get<string>('DB_PORT') || 5432),
           username: configService.get<string>('DB_USER'),
           password: configService.get<string>('DB_PASSWORD'),
-          database: dbName,
+          database: configService.get<string>('DB_NAME'),
 
           // Automatically loads entities registered through TypeOrmModule.forFeature().
           autoLoadEntities: true,
 
-          // Synchronize schema only when running against the dedicated test database.
-          synchronize: isTest,
+          synchronize: false,
 
           namingStrategy: new DatabaseNamingStrategy(),
         };
       },
     }),
   ],
+  exports: [TypeOrmModule],
 })
 export class DatabaseModule {}
