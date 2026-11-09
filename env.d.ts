@@ -9,6 +9,8 @@ declare namespace NodeJS {
     DB_PASSWORD: string;
     DB_NAME: string;
 
+    REDIS_URL: string;
+
     JWT_SECRET: string;
     JWT_ISSUER: string;
     JWT_AUDIENCE: string;
