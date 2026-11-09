@@ -40,6 +40,7 @@ import { asyncStore } from '@/commons/storage/async-storage';
 import { OrganisationOwnershipHistoryEntity } from '@/organisation-ownership-history/organisation-ownership-history.entity';
 import { logger } from '@/commons/logger/logger.wiston';
 import { handleServiceMethodError } from '@/commons/util/errorHandler';
+import { LoginLockoutService } from '@/login-lockout/login-lockout.service';
 
 @Injectable()
 export class AuthService {
@@ -59,6 +60,8 @@ export class AuthService {
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
+
+    private readonly loginLockoutService: LoginLockoutService,
   ) {}
 
   async register(
@@ -213,19 +216,34 @@ export class AuthService {
     response: ExResponse,
   ): Promise<ApiResponseDto<TLoginResponseData>> {
     try {
+      const email = dto?.email?.trim()?.toLowerCase();
+
+      const lockoutStatus =
+        await this.loginLockoutService.getLockoutStatus(email);
+
+      if (lockoutStatus.isLocked) {
+        throw new HttpException(
+          {
+            message: `Too many failed login attempts. Please try again later in ${Math.ceil(lockoutStatus.remainingSeconds / 60)} minute(s).`,
+          },
+          429,
+        );
+      }
       if (!dto.password || !dto.password.trim()) {
+        await this.loginLockoutService.recordFailedAttempt(email);
         throw new UnauthorizedException('Invalid email or password.');
       }
 
       const user = await this.userRepository.findOne({
         where: {
-          email: dto.email,
+          email,
           isActive: true,
           isDeleted: false,
         },
       });
 
       if (!user || !user.password) {
+        await this.loginLockoutService.recordFailedAttempt(email);
         throw new UnauthorizedException('Invalid email or password.');
       }
 
@@ -235,8 +253,10 @@ export class AuthService {
       );
 
       if (!passwordIsValid) {
+        await this.loginLockoutService.recordFailedAttempt(email);
         throw new UnauthorizedException('Invalid email or password.');
       }
+      await this.loginLockoutService.resetLockout(email);
 
       // Find all eligible organisation memberships belonging to this user.
       const memberships = await this.membershipRepository
