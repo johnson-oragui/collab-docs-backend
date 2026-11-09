@@ -23,11 +23,13 @@ import { OrganisationOwnershipHistoryModule } from './organisation-ownership-his
 import { OrganisationApiKeyModule } from './organisation-api-key/organisation-api-key.module';
 import { UserSessionTokenModule } from './user-session-token/user-session-token.module';
 import { UserSessionModule } from './user_sessions/user-session.module';
+import { LoginLockoutModule } from './login-lockout/login-lockout.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnvConfig }),
     DatabaseModule,
+    LoginLockoutModule,
     UserModule,
     ProfileModule,
     CustomJwtModule,

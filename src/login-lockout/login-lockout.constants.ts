@@ -1,0 +1,11 @@
+export const LOGIN_LOCKOUT = {
+  KEY_PREFIX: 'collabdocs:auth:login',
+
+  MAX_FAILED_ATTEMPTS: 5,
+
+  FAILURE_WINDOW_SECONDS: 15 * 60,
+
+  LOCKOUT_DURATIONS_MINUTES: [1, 5, 15, 30, 60],
+
+  LOCKOUT_LEVEL_TTL_SECONDS: 90 * 24 * 60 * 60,
+} as const;
