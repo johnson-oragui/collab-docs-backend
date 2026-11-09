@@ -1,11 +1,21 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir":  ["<rootDir>/src", "<rootDir>/test"],
+  "rootDir": "..",
+  "roots": ["<rootDir>/test"],
   "testEnvironment": "node",
-  "testMatch": [
-    "**/?(*.)+(spec|test).ts"
-  ],
+  "testRegex": ".*\\.e2e-spec\\.ts$",
+  "setupFiles": ["<rootDir>/test/jest.setup.ts"],
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
-  }
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": "<rootDir>/tsconfig.spec.json"
+      }
+    ]
+  },
+  "moduleNameMapper": {
+    "^@/test/(.*)$": "<rootDir>/test/$1",
+    "^@/(.*)$": "<rootDir>/src/$1"
+  },
+  "testTimeout": 30000
 }
