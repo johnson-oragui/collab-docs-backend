@@ -4,16 +4,33 @@ import { UserService } from './user.service';
 import UserController from './user.controller';
 import { PasswordModule } from '../password/password.module';
 import { CustomJwtModule } from '../jwt-service/jwt.module';
-import { IsEMailUniqueConstraint } from './dto/user-custom-validator/uniqueEmail.validator';
+import {
+  IsEMailUniqueConstraint,
+  IsOrgEMailUniqueConstraint,
+} from './dto/user-custom-validator/uniqueEmail.validator';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './user.entity';
 import { ProfileEntity } from '@/profile/profile.entity';
 import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
+import { UserSessionModule } from '@/user_sessions/user-session.module';
+import { OrganisationRepository } from '@/organisations/organisation.repository';
+import { OrganisationEntity } from '@/organisations/organisations.entity';
 
 @Module({
-  providers: [UserRepository, UserService, IsEMailUniqueConstraint],
+  providers: [
+    UserRepository,
+    UserService,
+    IsEMailUniqueConstraint,
+    IsOrgEMailUniqueConstraint,
+    OrganisationRepository,
+  ],
   controllers: [UserController],
-  exports: [UserService, UserRepository, IsEMailUniqueConstraint],
+  exports: [
+    UserService,
+    UserRepository,
+    IsEMailUniqueConstraint,
+    IsOrgEMailUniqueConstraint,
+  ],
   imports: [
     PasswordModule,
     CustomJwtModule,
@@ -21,7 +38,9 @@ import { OrganisationMembershipEntity } from '@/organisation-memberships/organis
       UserEntity,
       ProfileEntity,
       OrganisationMembershipEntity,
+      OrganisationEntity,
     ]),
+    UserSessionModule,
   ],
 })
 export default class UserModule {}

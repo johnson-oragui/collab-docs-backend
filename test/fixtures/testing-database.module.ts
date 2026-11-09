@@ -12,6 +12,8 @@ import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitat
 import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/entity';
 import { OrganisationOwnershipHistoryEntity } from '@/organisation-ownership-history/organisation-ownership-history.entity';
 import { OrganisationApiKeyEntity } from '@/organisation-api-key/organisation-api-key.entity';
+import { UserSessionTokenEntity } from '@/user-session-token/user-session-token.entity';
+import { UserSessionEntity } from '@/user_sessions/user-session.entity';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { OrganisationApiKeyEntity } from '@/organisation-api-key/organisation-ap
       OrganisationMembershipSuspensionHistoryEntity,
       OrganisationOwnershipHistoryEntity,
       OrganisationApiKeyEntity,
+      UserSessionTokenEntity,
+      UserSessionEntity,
     ]),
   ],
   exports: [
