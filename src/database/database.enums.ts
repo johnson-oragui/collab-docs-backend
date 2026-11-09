@@ -36,3 +36,17 @@ export const OrganisationApiKeyStatusEnum = Object.freeze({
 
 export type TOrganisationApiKeyStatusEnum =
   (typeof OrganisationApiKeyStatusEnum)[keyof typeof OrganisationApiKeyStatusEnum];
+
+export const UserSessionTokenStatusEnum = Object.freeze({
+  ACTIVE: 'ACTIVE',
+  USED: 'USED',
+  REVOKED: 'REVOKED',
+} as const);
+export type TUserSessionTokenStatusEnum =
+  (typeof UserSessionTokenStatusEnum)[keyof typeof UserSessionTokenStatusEnum];
+export const OrganisationStatusEnum = Object.freeze({
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+} as const);
+export type TOrganisationStatusEnum =
+  (typeof OrganisationStatusEnum)[keyof typeof OrganisationStatusEnum];
