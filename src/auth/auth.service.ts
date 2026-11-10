@@ -3,6 +3,7 @@ import {
   HttpException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
@@ -41,6 +42,7 @@ import { OrganisationOwnershipHistoryEntity } from '@/organisation-ownership-his
 import { logger } from '@/commons/logger/logger.wiston';
 import { handleServiceMethodError } from '@/commons/util/errorHandler';
 import { LoginLockoutService } from '@/login-lockout/login-lockout.service';
+import { LoginRateLimitService } from '@/login-lockout/login-rate-limit.service';
 
 @Injectable()
 export class AuthService {
@@ -62,6 +64,8 @@ export class AuthService {
     private readonly dataSource: DataSource,
 
     private readonly loginLockoutService: LoginLockoutService,
+
+    private readonly loginRateLimitService: LoginRateLimitService,
   ) {}
 
   async register(
@@ -216,12 +220,42 @@ export class AuthService {
     response: ExResponse,
   ): Promise<ApiResponseDto<TLoginResponseData>> {
     try {
-      const email = dto?.email?.trim()?.toLowerCase();
+      const email = dto.email.trim().toLowerCase();
+      const ipAddress = metadata.ipAddress?.trim();
 
-      const lockoutStatus =
-        await this.loginLockoutService.getLockoutStatus(email);
+      if (!ipAddress) {
+        throw new ServiceUnavailableException(
+          'Unable to determine client IP address.',
+        );
+      }
+
+      const loginRatelimitLockout =
+        await this.loginRateLimitService.consumeLoginRequest(ipAddress);
+
+      if (!loginRatelimitLockout.allowed) {
+        response.setHeader(
+          'Retry-After',
+          String(loginRatelimitLockout.retryAfterSeconds),
+        );
+
+        throw new HttpException(
+          {
+            message: 'Too many login requests. Please try again later.',
+          },
+          429,
+        );
+      }
+
+      const lockoutStatus = await this.loginLockoutService.getLockoutStatus(
+        email,
+        ipAddress,
+      );
 
       if (lockoutStatus.isLocked) {
+        response.setHeader(
+          'Retry-After',
+          String(lockoutStatus.remainingSeconds),
+        );
         throw new HttpException(
           {
             message: `Too many failed login attempts. Please try again later in ${Math.ceil(lockoutStatus.remainingSeconds / 60)} minute(s).`,
@@ -230,7 +264,7 @@ export class AuthService {
         );
       }
       if (!dto.password || !dto.password.trim()) {
-        await this.loginLockoutService.recordFailedAttempt(email);
+        await this.loginLockoutService.recordFailedAttempt(email, ipAddress);
         throw new UnauthorizedException('Invalid email or password.');
       }
 
@@ -243,7 +277,7 @@ export class AuthService {
       });
 
       if (!user || !user.password) {
-        await this.loginLockoutService.recordFailedAttempt(email);
+        await this.loginLockoutService.recordFailedAttempt(email, ipAddress);
         throw new UnauthorizedException('Invalid email or password.');
       }
 
@@ -253,10 +287,10 @@ export class AuthService {
       );
 
       if (!passwordIsValid) {
-        await this.loginLockoutService.recordFailedAttempt(email);
+        await this.loginLockoutService.recordFailedAttempt(email, ipAddress);
         throw new UnauthorizedException('Invalid email or password.');
       }
-      await this.loginLockoutService.resetLockout(email);
+      await this.loginLockoutService.resetLockout(email, ipAddress);
 
       // Find all eligible organisation memberships belonging to this user.
       const memberships = await this.membershipRepository
