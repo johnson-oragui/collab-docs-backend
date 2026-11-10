@@ -122,6 +122,11 @@ export class AuthController {
     @Req() req: ExRequest,
     @Res({ passthrough: true }) response: ExResponse,
   ): Promise<LoginResponseDto> {
+    // TODO: Handle cases for nestjs running on same server with nginx
+    // or nginxon server and nestjs in docker
+    // or both in docker
+    // or nextjs on the server but nginx in docker.
+    // these cases decide how req.ip and expressApp.set('trust proxy', true); is set
     return await this.authService.login(
       dto,
       {
