@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { randomUUID, createHash } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import { createE2eApp } from '@/test/fixtures/create-e2e-app';
 import { createHttpClient } from '@/test/fixtures/helpers/http-request';
@@ -15,6 +15,7 @@ import { UserSessionTokenEntity } from '@/user-session-token/user-session-token.
 
 import { LoginLockoutService } from '@/login-lockout/login-lockout.service';
 import { ILoginFailureResult } from '@/login-lockout/login-lockout.interface';
+import { generateRandomIPv4 } from '@/commons/util/generateRandomIPv4';
 
 describe('Login Lockout (e2e)', () => {
   let app: INestApplication;
@@ -40,18 +41,11 @@ describe('Login Lockout (e2e)', () => {
       organisationName: `Lockout Technologies ${uniqueId}`,
       organisationDescription: 'Login lockout E2E test organisation.',
       organisationEmail: `lockout-organisation-${uniqueId}@example.com`,
+      userIP: generateRandomIPv4(),
     };
   };
 
   const progressiveTestEmail = `progressive-${randomUUID()}@example.com`;
-
-  const getLockoutKey = (email: string) => {
-    const hash = createHash('sha256')
-      .update(email.trim().toLowerCase())
-      .digest('hex');
-
-    return `auth:login:lockout:${hash}`;
-  };
 
   beforeAll(async () => {
     app = await createE2eApp();
@@ -65,8 +59,13 @@ describe('Login Lockout (e2e)', () => {
 
     const registrationResponse = await http
       .post('/api/v1/auth/register')
-      .send(registrationPayload)
-      .expect(201);
+      .send(registrationPayload);
+    console.log(
+      '++++++++++++++++++++registrationResponse: ',
+      registrationResponse.body,
+    );
+
+    expect(registrationResponse.statusCode).toBe(201);
 
     registeredUserId = registrationResponse.body.data.user.id;
     registeredOrganisationId = registrationResponse.body.data.organisation.id;
@@ -75,11 +74,17 @@ describe('Login Lockout (e2e)', () => {
   afterAll(async () => {
     // Clean up Redis lockout state before closing the application.
     if (loginLockoutService) {
-      await loginLockoutService.resetLockout(registrationPayload.email);
-      await loginLockoutService.resetLockout(progressiveTestEmail);
+      await loginLockoutService.resetLockout(
+        registrationPayload.email,
+        registrationPayload.userIP,
+      );
+      await loginLockoutService.resetLockout(
+        progressiveTestEmail,
+        registrationPayload.userIP,
+      );
     }
 
-    if (dataSource?.isInitialized) {
+    if (dataSource?.isInitialized && registeredUserId) {
       const users = await dataSource.getRepository(UserEntity).find({
         where: [{ id: registeredUserId }],
         relations: {
@@ -174,10 +179,48 @@ describe('Login Lockout (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await loginLockoutService.resetLockout(registrationPayload.email);
+    await loginLockoutService.resetLockout(
+      registrationPayload.email,
+      registrationPayload.userIP,
+    );
   });
 
   describe('POST /api/v1/auth/login', () => {
+    it('should reject login requests after the IP request limit is exceeded', async () => {
+      const ipAddress = generateRandomIPv4();
+
+      // using a different email for each request so the account-specific
+      // failed-attempt lockout does not interfere with the IP-wide limit.
+      for (let requestNumber = 1; requestNumber <= 30; requestNumber++) {
+        const response = await http
+          .post('/api/v1/auth/login')
+          .send({
+            email: `rate-limit-${randomUUID()}@example.com`,
+            password: 'IncorrectPassword123#',
+          })
+          .set('x-forwarded-for', ipAddress)
+          .expect(401);
+
+        expect(response.body.message).toBe('Invalid email or password.');
+      }
+
+      // The 31st request from the same IP should be rejected.
+      // even with different emails
+      const response = await http
+        .post('/api/v1/auth/login')
+        .send({
+          email: `rate-limit-${randomUUID()}@example.com`,
+          password: 'IncorrectPassword123#',
+        })
+        .set('x-forwarded-for', ipAddress)
+        .expect(429);
+
+      expect(response.body.message).toContain('Too many login requests');
+
+      expect(response.headers['retry-after']).toBeDefined();
+
+      expect(Number(response.headers['retry-after'])).toBeGreaterThan(0);
+    });
     it('should increment failed attempts and lock the account after five failures', async () => {
       for (let attempt = 1; attempt <= 5; attempt++) {
         const res = await http
@@ -186,6 +229,7 @@ describe('Login Lockout (e2e)', () => {
             email: registrationPayload.email,
             password: 'IncorrectPassword123#',
           })
+          .set('x-forwarded-for', registrationPayload.userIP)
           .expect(401);
 
         console.log(res.body.message);
@@ -193,6 +237,7 @@ describe('Login Lockout (e2e)', () => {
 
       const status = await loginLockoutService.getLockoutStatus(
         registrationPayload.email,
+        registrationPayload.userIP,
       );
 
       expect(status.isLocked).toBe(true);
@@ -206,6 +251,7 @@ describe('Login Lockout (e2e)', () => {
           email: registrationPayload.email,
           password: registrationPayload.password,
         })
+        .set('x-forwarded-for', registrationPayload.userIP)
         .expect(429);
 
       expect(response.body.message).toContain('Too many failed login attempts');
@@ -220,6 +266,7 @@ describe('Login Lockout (e2e)', () => {
             email: registrationPayload.email,
             password: 'IncorrectPassword123#',
           })
+          .set('x-forwarded-for', registrationPayload.userIP)
           .expect(401);
       }
 
@@ -230,10 +277,12 @@ describe('Login Lockout (e2e)', () => {
           email: registrationPayload.email,
           password: registrationPayload.password,
         })
+        .set('x-forwarded-for', registrationPayload.userIP)
         .expect(200);
 
       const status = await loginLockoutService.getLockoutStatus(
         registrationPayload.email,
+        registrationPayload.userIP,
       );
 
       expect(status.isLocked).toBe(false);
@@ -245,6 +294,7 @@ describe('Login Lockout (e2e)', () => {
       for (let attempt = 1; attempt <= 5; attempt++) {
         result = await loginLockoutService.recordFailedAttempt(
           registrationPayload.email,
+          registrationPayload.userIP,
         );
       }
 

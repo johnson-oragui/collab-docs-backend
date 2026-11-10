@@ -18,19 +18,25 @@ export class LoginLockoutService {
       .digest('hex');
   }
 
-  private getKeys(email: string) {
-    const hash = this.getIdentifierHash(email);
-    const prefix = LOGIN_LOCKOUT.KEY_PREFIX;
+  private getKeys(email: string, ipAddress: string) {
+    const emailHash = this.getIdentifierHash(email);
+    const ipHash = this.getIdentifierHash(ipAddress);
+
+    const prefix = `${LOGIN_LOCKOUT.KEY_PREFIX}:ip-account`;
+    const identifier = `${ipHash}:${emailHash}`;
 
     return {
-      failures: `${prefix}:failures:${hash}`,
-      lockout: `${prefix}:lockout:${hash}`,
-      level: `${prefix}:lockout-level:${hash}`,
+      failures: `${prefix}:failures:${identifier}`,
+      lockout: `${prefix}:lockout:${identifier}`,
+      level: `${prefix}:lockout-level:${identifier}`,
     };
   }
 
-  async getLockoutStatus(email: string): Promise<ILoginLockoutStatus> {
-    const { lockout } = this.getKeys(email);
+  async getLockoutStatus(
+    email: string,
+    ipAddress: string,
+  ): Promise<ILoginLockoutStatus> {
+    const { lockout } = this.getKeys(email, ipAddress);
     const client = this.redisService.getClient();
 
     const remainingMilliseconds = await client.pTTL(lockout);
@@ -42,8 +48,11 @@ export class LoginLockoutService {
     };
   }
 
-  async recordFailedAttempt(email: string): Promise<ILoginFailureResult> {
-    const keys = this.getKeys(email);
+  async recordFailedAttempt(
+    email: string,
+    ipAddress: string,
+  ): Promise<ILoginFailureResult> {
+    const keys = this.getKeys(email, ipAddress);
     const client = this.redisService.getClient();
 
     const script = `
@@ -107,8 +116,8 @@ export class LoginLockoutService {
     };
   }
 
-  async resetLockout(email: string): Promise<void> {
-    const keys = this.getKeys(email);
+  async resetLockout(email: string, ipAddress: string): Promise<void> {
+    const keys = this.getKeys(email, ipAddress);
     const client = this.redisService.getClient();
 
     await client.del([keys.failures, keys.lockout, keys.level]);

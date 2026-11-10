@@ -9,3 +9,10 @@ export interface ILoginFailureResult {
   lockoutLevel: number;
   lockoutDurationSeconds: number;
 }
+
+export interface ILoginRateLimitResult {
+  allowed: boolean;
+  requestCount: number;
+  remainingRequests: number;
+  retryAfterSeconds: number;
+}
