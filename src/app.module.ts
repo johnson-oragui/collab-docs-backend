@@ -24,6 +24,7 @@ import { OrganisationApiKeyModule } from './organisation-api-key/organisation-ap
 import { UserSessionTokenModule } from './user-session-token/user-session-token.module';
 import { UserSessionModule } from './user_sessions/user-session.module';
 import { LoginLockoutModule } from './login-lockout/login-lockout.module';
+import { PasswordResetModule } from './password-recovery/password-recovery.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { LoginLockoutModule } from './login-lockout/login-lockout.module';
     OrganisationApiKeyModule,
     UserSessionTokenModule,
     UserSessionModule,
+    PasswordResetModule,
   ],
   controllers: [AppController],
   providers: [

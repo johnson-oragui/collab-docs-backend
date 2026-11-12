@@ -1,7 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { DataSource, In, IsNull, MoreThan } from 'typeorm';
+import { DataSource, EntityManager, In, IsNull, MoreThan } from 'typeorm';
 import { createHash, randomBytes } from 'crypto';
 
 import { UserSessionEntity } from './user-session.entity';
@@ -15,16 +15,13 @@ import {
 } from './user-session.interface';
 import { UserEntity } from '@/user/user.entity';
 import { OrganisationEntity } from '@/organisations/organisations.entity';
-
-const MAX_ACTIVE_SESSIONS = 5;
-
-const SESSION_LIMIT_REVOKE_REASON = 'SESSION_LIMIT';
-
-const REFRESH_TOKEN_REUSE_REVOKE_REASON = 'REFRESH_TOKEN_REUSE';
-
-const LOGOUT_REVOKE_REASON = 'LOGOUT';
-
-const LOGOUT_ALL_REVOKE_REASON = 'LOGOUT_ALL';
+import {
+  LOGOUT_ALL_REVOKE_REASON,
+  LOGOUT_REVOKE_REASON,
+  MAX_ACTIVE_SESSIONS,
+  REFRESH_TOKEN_REUSE_REVOKE_REASON,
+  SESSION_LIMIT_REVOKE_REASON,
+} from './user-sessrion.constants';
 
 @Injectable()
 export class UserSessionService {
@@ -249,63 +246,83 @@ export class UserSessionService {
     return Boolean(session);
   }
 
-  async revokeAllSessions(userId: string): Promise<void> {
+  async revokeAllSessions(
+    userId: string,
+    reason = LOGOUT_ALL_REVOKE_REASON,
+  ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
-      const sessionRepository = manager.getRepository(UserSessionEntity);
-      const sessionTokenRepository = manager.getRepository(
-        UserSessionTokenEntity,
-      );
-
-      // lock all active refresh tokens belonging to the user's sessions.
-      const activeTokens = await sessionTokenRepository
-        .createQueryBuilder('token')
-        .innerJoin('token.session', 'session')
-        .where('session.user_id = :userId', { userId })
-        .andWhere('session.is_deleted = false')
-        .andWhere('token.status = :status', {
-          status: UserSessionTokenStatusEnum.ACTIVE,
-        })
-        .andWhere('token.is_deleted = false')
-        .orderBy('token.id', 'ASC')
-        .setLock('pessimistic_write', undefined, ['token'])
-        .getMany();
-
-      // lock all sessions belonging to this user that haven't been revoked.
-      const sessions = await sessionRepository
-        .createQueryBuilder('session')
-        .where('session.user_id = :userId', { userId })
-        .andWhere('session.is_deleted = false')
-        .andWhere('session.revoked_at IS NULL')
-        .orderBy('session.id', 'ASC')
-        .setLock('pessimistic_write')
-        .getMany();
-
-      const now = new Date();
-
-      // revoke every unrevoked session.
-      for (const session of sessions) {
-        session.revokedAt = now;
-        session.revokeReason = LOGOUT_ALL_REVOKE_REASON;
-      }
-
-      if (sessions.length > 0) {
-        await sessionRepository.save(sessions);
-      }
-
-      // revoke all active refresh tokens.
-      if (activeTokens.length > 0) {
-        await sessionTokenRepository.update(
-          {
-            id: In(activeTokens.map((token) => token.id)),
-            status: UserSessionTokenStatusEnum.ACTIVE,
-            isDeleted: false,
-          },
-          {
-            status: UserSessionTokenStatusEnum.REVOKED,
-          },
-        );
-      }
+      await this.revokeAllSessionsWithManager(manager, userId, reason);
     });
+  }
+
+  async revokeAllSessionsWithManager(
+    manager: EntityManager,
+    userId: string,
+    reason: string,
+  ): Promise<void> {
+    const sessionTokenRepository = manager.getRepository(
+      UserSessionTokenEntity,
+    );
+    const sessionRepository = manager.getRepository(UserSessionEntity);
+
+    // lock all active refresh tokens belonging to the user's sessions.
+    const activeTokens = await sessionTokenRepository
+      .createQueryBuilder('token')
+      .innerJoin('token.session', 'session')
+      .where('session.user_id = :userId', { userId })
+      .andWhere('session.is_deleted = false')
+      .andWhere('token.status = :status', {
+        status: UserSessionTokenStatusEnum.ACTIVE,
+      })
+      .andWhere('token.is_deleted = false')
+      .orderBy('token.id', 'ASC')
+      .setLock('pessimistic_write', undefined, ['token'])
+      .getMany();
+
+    // const activeTokens = await sessionTokenRepository.find({
+    //   where: {
+    //     session: { user: { id: userId }, isDeleted: false },
+    //     status: UserSessionTokenStatusEnum.ACTIVE,
+    //     isDeleted: false,
+    //   },
+    //   order: { id: 'ASC' },
+    //   lock: { mode: 'pessimistic_write', tables: ['collabdocs_user_session_tokens'] },
+    // });
+
+    const sessions = await sessionRepository.find({
+      where: {
+        user: { id: userId },
+        revokedAt: IsNull(),
+        isDeleted: false,
+      },
+      order: { id: 'ASC' },
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    const revokedAt = new Date();
+
+    for (const session of sessions) {
+      session.revokedAt = revokedAt;
+      session.revokeReason = reason;
+    }
+
+    if (sessions.length > 0) {
+      await sessionRepository.save(sessions);
+    }
+
+    // revoke all active refresh tokens.
+    if (activeTokens.length > 0) {
+      await sessionTokenRepository.update(
+        {
+          id: In(activeTokens.map((token) => token.id)),
+          status: UserSessionTokenStatusEnum.ACTIVE,
+          isDeleted: false,
+        },
+        {
+          status: UserSessionTokenStatusEnum.REVOKED,
+        },
+      );
+    }
   }
 
   async rotateRefreshToken(

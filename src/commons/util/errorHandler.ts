@@ -7,6 +7,7 @@ export const handleServiceMethodError = (
   if (error instanceof HttpException) {
     throw error;
   }
+  console.error(message, ": ", error)
 
   throw new HttpException({ message, success: false }, 500);
 };
