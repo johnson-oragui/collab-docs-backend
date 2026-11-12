@@ -1,8 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from '../../../src/app.module';
 import { createHttpClient } from '@/test/fixtures/helpers/http-request';
 import { createE2eApp } from '@/test/fixtures/create-e2e-app';
 
@@ -20,8 +18,9 @@ describe('AppController (e2e)', () => {
   });
 
   it('/ (GET)', async () => {
-    return http
+    return await request(app.getHttpServer())
       .get('/')
+      .set('User-Agent', 'Root-user')
       .expect(200)
       .expect({ message: 'Collab Docs says Hello!' });
   });

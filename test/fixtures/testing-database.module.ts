@@ -14,6 +14,7 @@ import { OrganisationOwnershipHistoryEntity } from '@/organisation-ownership-his
 import { OrganisationApiKeyEntity } from '@/organisation-api-key/organisation-api-key.entity';
 import { UserSessionTokenEntity } from '@/user-session-token/user-session-token.entity';
 import { UserSessionEntity } from '@/user_sessions/user-session.entity';
+import { PasswordResetTokenEntity } from '@/password-recovery/password-recovery.entity';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UserSessionEntity } from '@/user_sessions/user-session.entity';
       OrganisationApiKeyEntity,
       UserSessionTokenEntity,
       UserSessionEntity,
+      PasswordResetTokenEntity,
     ]),
   ],
   exports: [

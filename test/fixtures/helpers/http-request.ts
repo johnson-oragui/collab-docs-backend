@@ -9,31 +9,31 @@ export function createHttpClient(app: INestApplication) {
   return {
     get(path: string) {
       return request(server)
-        .get(path)
+        .get(path.startsWith("/api/v1/") ? path: `/api/v1/${path}`)
         .set('User-Agent', E2E_USER_AGENT);
     },
 
     post(path: string) {
       return request(server)
-        .post(path)
+        .post(path.startsWith("/api/v1/") ? path: `/api/v1/${path}`)
         .set('User-Agent', E2E_USER_AGENT);
     },
 
     patch(path: string) {
       return request(server)
-        .patch(path)
+        .patch(path.startsWith("/api/v1/") ? path: `/api/v1/${path}`)
         .set('User-Agent', E2E_USER_AGENT);
     },
 
     put(path: string) {
       return request(server)
-        .put(path)
+        .put(path.startsWith("/api/v1/") ? path: `/api/v1/${path}`)
         .set('User-Agent', E2E_USER_AGENT);
     },
 
     delete(path: string) {
       return request(server)
-        .delete(path)
+        .delete(path.startsWith("/api/v1/") ? path: `/api/v1/${path}`)
         .set('User-Agent', E2E_USER_AGENT);
     },
   };
