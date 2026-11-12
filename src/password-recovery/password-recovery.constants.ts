@@ -13,5 +13,3 @@ export const PASSWORD_RECOVERY = {
     WINDOW_SECONDS: 60 * 60,
   },
 } as const;
-
-export const PASSWORD_RESET_REVOKE_REASON = 'PASSWORD_RESET';
