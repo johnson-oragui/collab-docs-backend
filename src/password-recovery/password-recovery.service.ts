@@ -8,15 +8,13 @@ import { UserEntity } from '@/user/user.entity';
 import { PasswordService } from '@/password/password.service';
 import { UserSessionService } from '@/user_sessions/user-session.service';
 
-import {
-  PASSWORD_RECOVERY,
-  PASSWORD_RESET_REVOKE_REASON,
-} from './password-recovery.constants';
+import { PASSWORD_RECOVERY } from './password-recovery.constants';
 import { PasswordResetTokenEntity } from './password-recovery.entity';
 import { PasswordRecoveryRateLimitService } from './password-recovery-rate-limit.service';
 import { ApiResponseDto } from '@/commons/dtos/api-response.dto';
 import { ForgotPasswordResponseDto } from './dto/forgot-password.dto';
 import { handleServiceMethodError } from '@/commons/util/errorHandler';
+import { PASSWORD_RESET_REVOKE_REASON } from '@/user_sessions/user-sessrion.constants';
 
 @Injectable()
 export class PasswordRecoveryService {
