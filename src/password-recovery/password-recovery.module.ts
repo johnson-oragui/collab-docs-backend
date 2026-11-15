@@ -10,6 +10,7 @@ import { PasswordRecoveryRateLimitService } from './password-recovery-rate-limit
 import { PasswordModule } from '@/password/password.module';
 import { RedisModule } from '@/redis/redis.module';
 import { PasswordRecoveryController } from './password-recovery.controller';
+import { EmailOutboxModule } from '@/email-outbox/email-outbox.module';
 
 @Module({
   imports: [
@@ -22,9 +23,10 @@ import { PasswordRecoveryController } from './password-recovery.controller';
     UserSessionModule,
     PasswordModule,
     RedisModule,
+    EmailOutboxModule,
   ],
   controllers: [PasswordRecoveryController],
   exports: [PasswordRecoveryService],
   providers: [PasswordRecoveryService, PasswordRecoveryRateLimitService],
 })
-export class PasswordResetModule {}
+export class PasswordRecoveryModule {}

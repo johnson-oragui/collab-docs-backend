@@ -15,6 +15,10 @@ import { ApiResponseDto } from '@/commons/dtos/api-response.dto';
 import { ForgotPasswordResponseDto } from './dto/forgot-password.dto';
 import { handleServiceMethodError } from '@/commons/util/errorHandler';
 import { PASSWORD_RESET_REVOKE_REASON } from '@/user_sessions/user-sessrion.constants';
+import { ConfigService } from '@nestjs/config';
+import { EmailOutboxService } from '@/email-outbox/email-outbox.service';
+import { EmailTemplateService } from '@/email/email-template.service';
+import { EmailEventTypeEnum } from '@/database/database.enums';
 
 @Injectable()
 export class PasswordRecoveryService {
@@ -30,6 +34,9 @@ export class PasswordRecoveryService {
     private readonly passwordService: PasswordService,
     private readonly userSessionService: UserSessionService,
     private readonly passwordRecoveryRateLimitService: PasswordRecoveryRateLimitService,
+    private readonly configService: ConfigService,
+    private readonly emailOutboxService: EmailOutboxService,
+    private readonly emailTemplateService: EmailTemplateService,
   ) {}
 
   async requestPasswordReset(
@@ -58,7 +65,7 @@ export class PasswordRecoveryService {
         );
       }
 
-      const user = await this.userRepository.findOne({
+      const existingUser = await this.userRepository.findOne({
         where: {
           email: normalizedEmail,
           isActive: true,
@@ -66,25 +73,33 @@ export class PasswordRecoveryService {
         },
       });
 
-      if (!user) {
+      if (!existingUser) {
         return new ForgotPasswordResponseDto({});
       }
 
       const rawToken = this.getPasswordToken();
-      // Logging the raw token here for testing. remove when email sending is implemented
-      console.log('++++++++++rawToken: ', rawToken);
-
       const tokenHash = this.hashToken(rawToken);
 
       const now = new Date();
+
       const expiresAt = new Date(
         now.getTime() + PASSWORD_RECOVERY.TOKEN_EXPIRY_MINUTES * 60 * 1000,
       );
 
+      const resetUrl = new URL(
+        '/reset-password',
+        this.configService.getOrThrow<string>('APP_BASE_URL'),
+      );
+
+      resetUrl.searchParams.set('token', rawToken);
+
       await this.dataSource.transaction(async (manager) => {
         const tokenRepository = manager.getRepository(PasswordResetTokenEntity);
+
         const userRepository = manager.getRepository(UserEntity);
 
+        // Lock the account so concurrent reset requests cannot
+        // invalidate each other's tokens unpredictably.
         const user = await userRepository.findOne({
           where: {
             email: normalizedEmail,
@@ -95,10 +110,10 @@ export class PasswordRecoveryService {
         });
 
         if (!user) {
-          return new ForgotPasswordResponseDto({});
+          return;
         }
 
-        // A new request invalidates previously issued, unused tokens.
+        // Revoke previously issued, unused reset tokens.
         await tokenRepository
           .createQueryBuilder()
           .update(PasswordResetTokenEntity)
@@ -108,6 +123,7 @@ export class PasswordRecoveryService {
           .andWhere('revoked_at IS NULL')
           .execute();
 
+        // Store only the SHA-256 hash of the raw token.
         const resetToken = tokenRepository.create({
           user: { id: user.id } as UserEntity,
           tokenHash,
@@ -118,20 +134,27 @@ export class PasswordRecoveryService {
         });
 
         await tokenRepository.save(resetToken);
+
+        // Create the email payload using the existing template.
+        const emailPayload = this.emailTemplateService.createPasswordResetEmail(
+          {
+            recipientEmail: user.email,
+            recipientName: user.firstName ?? undefined,
+            actionUrl: resetUrl.toString(),
+            expiresIn: `${PASSWORD_RECOVERY.TOKEN_EXPIRY_MINUTES} minutes`,
+          },
+        );
+
+        // Encrypt and persist the email in this same transaction.
+        await this.emailOutboxService.create(
+          manager,
+          EmailEventTypeEnum.PASSWORD_RESET,
+          emailPayload,
+        );
       });
 
-      /*
-       * TODO: (email):
-       * Send the password-reset link using the future email service.
-       *
-       * The raw token is available here only for constructing the link.
-       * Never persist it, return it from this method, or log it.
-       *
-       * await this.emailService.sendPasswordResetEmail({
-       *   recipient: normalizedEmail,
-       *   resetToken: rawToken,
-       * });
-       */
+      // The dispatcher will pick up the PENDING outbox record
+      // and enqueue it for BullMQ processing.
       return new ForgotPasswordResponseDto({});
     } catch (error) {
       return handleServiceMethodError(
