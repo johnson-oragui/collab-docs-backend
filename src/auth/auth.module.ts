@@ -18,6 +18,7 @@ import { OrganisationOwnershipHistoryEntity } from '@/organisation-ownership-his
 import { DatabaseModule } from '@/database/database.module';
 import { OrganisationModule } from '@/organisations/module';
 import { LoginLockoutModule } from '@/login-lockout/login-lockout.module';
+import { EmailVerificationModule } from '@/email-verification/email-verification.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { LoginLockoutModule } from '@/login-lockout/login-lockout.module';
     UserSessionModule,
     OrganisationModule,
     LoginLockoutModule,
+    EmailVerificationModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],
