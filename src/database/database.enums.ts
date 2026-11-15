@@ -48,5 +48,24 @@ export const OrganisationStatusEnum = Object.freeze({
   ACTIVE: 'ACTIVE',
   SUSPENDED: 'SUSPENDED',
 } as const);
+
 export type TOrganisationStatusEnum =
   (typeof OrganisationStatusEnum)[keyof typeof OrganisationStatusEnum];
+
+export const EmailOutboxStatusEnum = Object.freeze({
+  PENDING: 'PENDING',
+  QUEUED: 'QUEUED',
+  SENT: 'SENT',
+  FAILED: 'FAILED',
+} as const);
+
+export type TEmailOutboxStatusEnum =
+  (typeof EmailOutboxStatusEnum)[keyof typeof EmailOutboxStatusEnum];
+
+export const EmailEventTypeEnum = Object.freeze({
+  PASSWORD_RESET: 'PASSWORD_RESET',
+  EMAIL_VERIFICATION: 'EMAIL_VERIFICATION',
+} as const);
+
+export type TEmailEventTypeEnum =
+  (typeof EmailEventTypeEnum)[keyof typeof EmailEventTypeEnum];

@@ -94,7 +94,7 @@ export class CreateUserRequestDto {
 
   @ApiProperty({
     description: 'Name of the organisation being created during registration',
-    example: 'Startinbox Technologies',
+    example: 'Collabdocs Technologies',
     required: true,
   })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
