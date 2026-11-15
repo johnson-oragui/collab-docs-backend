@@ -28,6 +28,7 @@ import { PasswordRecoveryModule } from './password-recovery/password-recovery.mo
 import { EmailModule } from './email/email.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EmailOutboxModule } from './email-outbox/email-outbox.module';
+import { EmailVerificationModule } from './email-verification/email-verification.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { EmailOutboxModule } from './email-outbox/email-outbox.module';
     UserSessionModule,
     PasswordRecoveryModule,
     EmailOutboxModule,
+    EmailVerificationModule,
   ],
   controllers: [AppController],
   providers: [
