@@ -280,6 +280,9 @@ export class AuthService {
         await this.loginLockoutService.recordFailedAttempt(email, ipAddress);
         throw new UnauthorizedException('Invalid email or password.');
       }
+      if (!user?.emailVerifiedAt) {
+        throw new HttpException({ message: 'Account not verified yet.' }, 409);
+      }
 
       const passwordIsValid = await this.passwordService.verify(
         user.password,
