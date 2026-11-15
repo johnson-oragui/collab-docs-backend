@@ -121,6 +121,9 @@ export class PasswordRecoveryService {
           .where('user_id = :userId', { userId: user.id })
           .andWhere('used_at IS NULL')
           .andWhere('revoked_at IS NULL')
+          .andWhere('purpose = :purpose', {
+            purpose: EmailEventTypeEnum.PASSWORD_RESET,
+          })
           .execute();
 
         // Store only the SHA-256 hash of the raw token.
@@ -131,6 +134,7 @@ export class PasswordRecoveryService {
           usedAt: null,
           revokedAt: null,
           requestedFromIp: ipAddress,
+          purpose: EmailEventTypeEnum.PASSWORD_RESET,
         });
 
         await tokenRepository.save(resetToken);
@@ -174,7 +178,7 @@ export class PasswordRecoveryService {
       // Preliminary lookup avoids performing an expensive password hash
       // for obviously invalid tokens. The token is rechecked under lock.
       const existingToken = await this.passwordResetTokenRepository.findOne({
-        where: { tokenHash },
+        where: { tokenHash, purpose: EmailEventTypeEnum.PASSWORD_RESET },
         relations: { user: true },
       });
 
@@ -190,7 +194,8 @@ export class PasswordRecoveryService {
       if (
         existingToken.usedAt ||
         existingToken.revokedAt ||
-        existingToken.expiresAt <= now
+        existingToken.expiresAt <= now ||
+        existingToken.purpose !== EmailEventTypeEnum.PASSWORD_RESET
       ) {
         throw new HttpException(
           { message: 'Invalid or expired reset token.' },
@@ -233,7 +238,10 @@ export class PasswordRecoveryService {
 
         // Lock and revalidate the token to prevent concurrent reuse.
         const resetToken = await tokenRepository.findOne({
-          where: { id: existingToken.id },
+          where: {
+            id: existingToken.id,
+            purpose: EmailEventTypeEnum.PASSWORD_RESET,
+          },
           lock: { mode: 'pessimistic_write' },
         });
 
@@ -243,7 +251,8 @@ export class PasswordRecoveryService {
           !resetToken ||
           resetToken.usedAt ||
           resetToken.revokedAt ||
-          resetToken.expiresAt <= transactionTime
+          resetToken.expiresAt <= transactionTime ||
+          resetToken.purpose !== EmailEventTypeEnum.PASSWORD_RESET
         ) {
           throw new HttpException(
             { message: 'Invalid or expired reset token.' },
@@ -267,6 +276,9 @@ export class PasswordRecoveryService {
           .andWhere('id != :tokenId', { tokenId: resetToken.id })
           .andWhere('used_at IS NULL')
           .andWhere('revoked_at IS NULL')
+          .andWhere('purpose = :purpose', {
+            purpose: EmailEventTypeEnum.PASSWORD_RESET,
+          })
           .execute();
 
         // Revoke sessions and refresh tokens in this same transaction.
