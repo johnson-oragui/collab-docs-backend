@@ -14,12 +14,11 @@ import { UserSessionService } from '@/user_sessions/user-session.service';
 import { UserSessionTokenEntity } from '@/user-session-token/user-session-token.entity';
 import { UserSessionEntity } from '@/user_sessions/user-session.entity';
 import { OrganisationEntity } from '@/organisations/organisations.entity';
-import {
-  OrganisationMembershipStatusEnum,
-  UserSessionTokenStatusEnum,
-} from '@/database/database.enums';
+
 import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
 import { RoleEntity } from '@/roles/roles.entity';
+import { EmailOutboxEntity } from '@/email-outbox/email.entity';
+import { OrganisationMembershipStatusEnum, UserSessionTokenStatusEnum } from '@/database/database.enums';
 
 describe('TEST PasswordRecovery (e2e)', () => {
   let app: INestApplication;
@@ -28,6 +27,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
 
   let userRepository: Repository<UserEntity>;
   let passwordResetTokenRepository: Repository<PasswordResetTokenEntity>;
+  let emailOutboxRepository: Repository<EmailOutboxEntity>;
 
   let passwordRecoveryService: PasswordRecoveryService;
 
@@ -55,6 +55,8 @@ describe('TEST PasswordRecovery (e2e)', () => {
     http = createHttpClient(app);
 
     dataSource = app.get(DataSource);
+
+    emailOutboxRepository = dataSource.getRepository(EmailOutboxEntity);
 
     userRepository = dataSource.getRepository<UserEntity>(UserEntity);
     passwordResetTokenRepository = dataSource.getRepository(
@@ -90,6 +92,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
   });
 
   afterAll(async () => {
+    await emailOutboxRepository.deleteAll();
     await sessionTokenRepository.delete({
       session: { id: In(objectIDs) },
     });
