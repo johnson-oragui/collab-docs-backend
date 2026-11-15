@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { randomUUID } from 'node:crypto';
 
 import { createE2eApp } from '@/test/fixtures/create-e2e-app';
@@ -23,6 +23,7 @@ describe('Login Lockout (e2e)', () => {
   let dataSource: DataSource;
 
   let loginLockoutService: LoginLockoutService;
+  let userRepository: Repository<UserEntity>;
 
   let registrationPayload: ReturnType<typeof createRegistrationPayload>;
   let registeredUserId: string;
@@ -52,6 +53,7 @@ describe('Login Lockout (e2e)', () => {
 
     http = createHttpClient(app);
     dataSource = app.get(DataSource);
+    userRepository = dataSource.getRepository(UserEntity);
 
     loginLockoutService = app.get(LoginLockoutService);
 
@@ -60,15 +62,16 @@ describe('Login Lockout (e2e)', () => {
     const registrationResponse = await http
       .post('/api/v1/auth/register')
       .send(registrationPayload);
-    console.log(
-      '++++++++++++++++++++registrationResponse: ',
-      registrationResponse.body,
-    );
+    // console.log(
+    //   '++++++++++++++++++++registrationResponse: ',
+    //   registrationResponse.body,
+    // );
 
     expect(registrationResponse.statusCode).toBe(201);
 
     registeredUserId = registrationResponse.body.data.user.id;
     registeredOrganisationId = registrationResponse.body.data.organisation.id;
+    await userRepository.sql`UPDATE collabdocs_users SET email_verified_at = NOW() WHERE id = ${registeredUserId}`;
   });
 
   afterAll(async () => {
