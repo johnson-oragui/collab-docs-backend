@@ -18,7 +18,11 @@ import { OrganisationEntity } from '@/organisations/organisations.entity';
 import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
 import { RoleEntity } from '@/roles/roles.entity';
 import { EmailOutboxEntity } from '@/email-outbox/email.entity';
-import { OrganisationMembershipStatusEnum, UserSessionTokenStatusEnum } from '@/database/database.enums';
+import {
+  EmailEventTypeEnum,
+  OrganisationMembershipStatusEnum,
+  UserSessionTokenStatusEnum,
+} from '@/database/database.enums';
 
 describe('TEST PasswordRecovery (e2e)', () => {
   let app: INestApplication;
@@ -89,6 +93,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
         acceptTerms: true,
       }),
     );
+    objectIDs.push(user.id);
   });
 
   afterAll(async () => {
@@ -107,7 +112,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
       owner: { id: user.id },
     });
     if (user?.id) {
-      await userRepository.delete({ id: user.id });
+      await userRepository.delete({ id: In(objectIDs) });
     }
 
     if (app) {
@@ -118,6 +123,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
   beforeEach(async () => {
     await passwordResetTokenRepository.delete({
       user: { id: user.id },
+      purpose: EmailEventTypeEnum.PASSWORD_RESET,
     });
 
     user.password = originalPasswordHash;
@@ -138,6 +144,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
         usedAt: null,
         revokedAt: null,
         requestedFromIp: generateRandomIPv4(),
+        purpose: EmailEventTypeEnum.PASSWORD_RESET,
       }),
     );
   }
@@ -173,6 +180,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
       where: {
         tokenHash,
         user: { id: user.id },
+        purpose: EmailEventTypeEnum.PASSWORD_RESET,
       },
     });
 
@@ -250,6 +258,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
       where: {
         tokenHash,
         user: { id: user.id },
+        purpose: EmailEventTypeEnum.PASSWORD_RESET,
       },
     });
 
@@ -288,6 +297,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
     const savedTokens = await passwordResetTokenRepository.find({
       where: {
         user: { id: user.id },
+        purpose: EmailEventTypeEnum.PASSWORD_RESET,
       },
     });
 
