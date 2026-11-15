@@ -16,6 +16,9 @@ export class UserEntity extends CustomBaseEntity {
   @Column({ name: 'password', nullable: true, type: 'varchar', length: 255 })
   declare password?: string | null;
 
+  @Column({ nullable: true, type: 'timestamptz' })
+  declare emailVerifiedAt: Date | null;
+
   @Column({ name: 'last_name', nullable: true })
   declare lastName: string;
   @Column({ nullable: true, type: 'uuid' })

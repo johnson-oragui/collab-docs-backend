@@ -62,6 +62,23 @@ class EnvironmentVariables {
 
   @IsString()
   declare REDIS_URL: string;
+
+  @IsString()
+  declare GMAIL_USER: string;
+  @IsString()
+  declare GMAIL_APP_PASSWORD: string;
+  @IsString()
+  declare EMAIL_FROM: string;
+
+  @IsString()
+  declare APP_BASE_URL: string;
+  @IsString()
+  declare EMAIL_VERIFICATION_TOKEN_EXPIRY_HOURS: string;
+  @IsString()
+  declare PASSWORD_RESET_TOKEN_EXPIRY_MINUTES: string;
+
+  @IsString()
+  declare EMAIL_ENCRYPTION_KEY: string;
 }
 
 export function validateEnvConfig(

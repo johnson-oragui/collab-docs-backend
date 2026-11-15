@@ -14,12 +14,15 @@ import { UserSessionService } from '@/user_sessions/user-session.service';
 import { UserSessionTokenEntity } from '@/user-session-token/user-session-token.entity';
 import { UserSessionEntity } from '@/user_sessions/user-session.entity';
 import { OrganisationEntity } from '@/organisations/organisations.entity';
+
+import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
+import { RoleEntity } from '@/roles/roles.entity';
+import { EmailOutboxEntity } from '@/email-outbox/email.entity';
 import {
+  EmailEventTypeEnum,
   OrganisationMembershipStatusEnum,
   UserSessionTokenStatusEnum,
 } from '@/database/database.enums';
-import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
-import { RoleEntity } from '@/roles/roles.entity';
 
 describe('TEST PasswordRecovery (e2e)', () => {
   let app: INestApplication;
@@ -28,6 +31,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
 
   let userRepository: Repository<UserEntity>;
   let passwordResetTokenRepository: Repository<PasswordResetTokenEntity>;
+  let emailOutboxRepository: Repository<EmailOutboxEntity>;
 
   let passwordRecoveryService: PasswordRecoveryService;
 
@@ -55,6 +59,8 @@ describe('TEST PasswordRecovery (e2e)', () => {
     http = createHttpClient(app);
 
     dataSource = app.get(DataSource);
+
+    emailOutboxRepository = dataSource.getRepository(EmailOutboxEntity);
 
     userRepository = dataSource.getRepository<UserEntity>(UserEntity);
     passwordResetTokenRepository = dataSource.getRepository(
@@ -87,9 +93,11 @@ describe('TEST PasswordRecovery (e2e)', () => {
         acceptTerms: true,
       }),
     );
+    objectIDs.push(user.id);
   });
 
   afterAll(async () => {
+    await emailOutboxRepository.deleteAll();
     await sessionTokenRepository.delete({
       session: { id: In(objectIDs) },
     });
@@ -104,7 +112,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
       owner: { id: user.id },
     });
     if (user?.id) {
-      await userRepository.delete({ id: user.id });
+      await userRepository.delete({ id: In(objectIDs) });
     }
 
     if (app) {
@@ -115,6 +123,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
   beforeEach(async () => {
     await passwordResetTokenRepository.delete({
       user: { id: user.id },
+      purpose: EmailEventTypeEnum.PASSWORD_RESET,
     });
 
     user.password = originalPasswordHash;
@@ -135,6 +144,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
         usedAt: null,
         revokedAt: null,
         requestedFromIp: generateRandomIPv4(),
+        purpose: EmailEventTypeEnum.PASSWORD_RESET,
       }),
     );
   }
@@ -170,6 +180,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
       where: {
         tokenHash,
         user: { id: user.id },
+        purpose: EmailEventTypeEnum.PASSWORD_RESET,
       },
     });
 
@@ -247,6 +258,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
       where: {
         tokenHash,
         user: { id: user.id },
+        purpose: EmailEventTypeEnum.PASSWORD_RESET,
       },
     });
 
@@ -285,6 +297,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
     const savedTokens = await passwordResetTokenRepository.find({
       where: {
         user: { id: user.id },
+        purpose: EmailEventTypeEnum.PASSWORD_RESET,
       },
     });
 

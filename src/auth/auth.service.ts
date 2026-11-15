@@ -43,6 +43,7 @@ import { logger } from '@/commons/logger/logger.wiston';
 import { handleServiceMethodError } from '@/commons/util/errorHandler';
 import { LoginLockoutService } from '@/login-lockout/login-lockout.service';
 import { LoginRateLimitService } from '@/login-lockout/login-rate-limit.service';
+import { EmailVerificationService } from '@/email-verification/email-verification.service';
 
 @Injectable()
 export class AuthService {
@@ -66,6 +67,7 @@ export class AuthService {
     private readonly loginLockoutService: LoginLockoutService,
 
     private readonly loginRateLimitService: LoginRateLimitService,
+    private readonly emailVerificationService: EmailVerificationService,
   ) {}
 
   async register(
@@ -124,6 +126,7 @@ export class AuthService {
             acceptTerms: dto.acceptTerms,
             isActive: true,
             requestId,
+            emailVerifiedAt: null,
             profile: manager.create(ProfileEntity, {
               bio: undefined,
               avatarUrl: undefined,
@@ -132,6 +135,11 @@ export class AuthService {
           });
 
           const savedUser = await manager.save(UserEntity, user);
+
+          await this.emailVerificationService.createVerificationRequest(
+            manager,
+            savedUser,
+          );
 
           const organisation = manager.create(OrganisationEntity, {
             name: dto.organisationName,
@@ -279,6 +287,9 @@ export class AuthService {
       if (!user || !user.password) {
         await this.loginLockoutService.recordFailedAttempt(email, ipAddress);
         throw new UnauthorizedException('Invalid email or password.');
+      }
+      if (!user?.emailVerifiedAt) {
+        throw new HttpException({ message: 'Account not verified yet.' }, 409);
       }
 
       const passwordIsValid = await this.passwordService.verify(

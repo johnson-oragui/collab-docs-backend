@@ -1,4 +1,8 @@
 import { CustomBaseEntity } from '@/database/base.entity';
+import {
+  EmailEventTypeEnum,
+  type TEmailEventTypeEnum,
+} from '@/database/database.enums';
 import { UserEntity } from '@/user/user.entity';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
@@ -7,7 +11,10 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
   unique: true,
 })
 @Index('idx_password_reset_tokens_user_id', ['user'])
-@Index('idx_password_reset_tokens_user_status', ['user', 'usedAt', 'revokedAt'])
+@Index(
+  'idx_password_reset_tokens_user_status',
+  ['user', 'purpose', 'usedAt', 'revokedAt'],
+)
 @Index('idx_password_reset_tokens_expires_at', ['expiresAt'])
 export class PasswordResetTokenEntity extends CustomBaseEntity {
   @ManyToOne(() => UserEntity, {
@@ -23,6 +30,13 @@ export class PasswordResetTokenEntity extends CustomBaseEntity {
     length: 64,
   })
   declare tokenHash: string;
+
+  @Column({
+    type: 'enum',
+    enum: EmailEventTypeEnum,
+    default: EmailEventTypeEnum.PASSWORD_RESET,
+  })
+  declare purpose: TEmailEventTypeEnum;
 
   @Column({
     name: 'expires_at',

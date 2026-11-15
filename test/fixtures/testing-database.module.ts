@@ -15,6 +15,7 @@ import { OrganisationApiKeyEntity } from '@/organisation-api-key/organisation-ap
 import { UserSessionTokenEntity } from '@/user-session-token/user-session-token.entity';
 import { UserSessionEntity } from '@/user_sessions/user-session.entity';
 import { PasswordResetTokenEntity } from '@/password-recovery/password-recovery.entity';
+import { EmailOutboxEntity } from '@/email-outbox/email.entity';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { PasswordResetTokenEntity } from '@/password-recovery/password-recovery.
       UserSessionTokenEntity,
       UserSessionEntity,
       PasswordResetTokenEntity,
+      EmailOutboxEntity,
     ]),
   ],
   exports: [

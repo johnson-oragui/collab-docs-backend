@@ -1,6 +1,5 @@
-
 import { INestApplication } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { randomUUID } from 'node:crypto';
 
 import { createE2eApp } from '@/test/fixtures/create-e2e-app';
@@ -20,6 +19,7 @@ describe('Authentication Login (e2e)', () => {
   let app: INestApplication;
   let http: ReturnType<typeof createHttpClient>;
   let dataSource: DataSource;
+  let userRepository: Repository<UserEntity>;
 
   let registrationPayload: ReturnType<typeof createRegistrationPayload>;
   let registeredUserId: string;
@@ -46,6 +46,7 @@ describe('Authentication Login (e2e)', () => {
 
     http = createHttpClient(app);
     dataSource = app.get(DataSource);
+    userRepository = dataSource.getRepository(UserEntity);
 
     registrationPayload = createRegistrationPayload();
 
@@ -55,8 +56,8 @@ describe('Authentication Login (e2e)', () => {
       .expect(201);
 
     registeredUserId = registrationResponse.body.data.user.id;
-    registeredOrganisationId =
-      registrationResponse.body.data.organisation.id;
+    registeredOrganisationId = registrationResponse.body.data.organisation.id;
+    await userRepository.sql`UPDATE collabdocs_users SET email_verified_at = NOW() WHERE id = ${registeredUserId}`;
   });
 
   afterAll(async () => {
@@ -100,9 +101,7 @@ describe('Authentication Login (e2e)', () => {
           .where('"session_id" IN (:...sessionIds)', { sessionIds })
           .execute();
 
-        await dataSource
-          .getRepository(UserSessionEntity)
-          .delete(sessionIds);
+        await dataSource.getRepository(UserSessionEntity).delete(sessionIds);
       }
 
       // Delete organisation ownership history.
@@ -158,13 +157,11 @@ describe('Authentication Login (e2e)', () => {
 
   describe('POST /api/v1/auth/login', () => {
     it('should register without creating a session', async () => {
-      const sessions = await dataSource
-        .getRepository(UserSessionEntity)
-        .find({
-          where: {
-            user: { id: registeredUserId },
-          },
-        });
+      const sessions = await dataSource.getRepository(UserSessionEntity).find({
+        where: {
+          user: { id: registeredUserId },
+        },
+      });
 
       expect(sessions).toHaveLength(0);
     });
@@ -210,14 +207,12 @@ describe('Authentication Login (e2e)', () => {
       expect(response.body.data).not.toHaveProperty('refreshToken');
 
       // Verify that a session was persisted.
-      const sessions = await dataSource
-        .getRepository(UserSessionEntity)
-        .find({
-          where: {
-            user: { id: registeredUserId },
-            organisation: { id: registeredOrganisationId },
-          },
-        });
+      const sessions = await dataSource.getRepository(UserSessionEntity).find({
+        where: {
+          user: { id: registeredUserId },
+          organisation: { id: registeredOrganisationId },
+        },
+      });
 
       expect(sessions).toHaveLength(1);
 
@@ -250,6 +245,22 @@ describe('Authentication Login (e2e)', () => {
           password: 'StrongPassword123#',
         })
         .expect(401);
+    });
+    it('should reject a non-verified email', async () => {
+      const nonVerifiedRegistrationPayload = createRegistrationPayload();
+
+      await http
+        .post('/api/v1/auth/register')
+        .send(nonVerifiedRegistrationPayload)
+        .expect(201);
+
+      await http
+        .post('/api/v1/auth/login')
+        .send({
+          email: nonVerifiedRegistrationPayload.email,
+          password: 'StrongPassword123#',
+        })
+        .expect(409);
     });
 
     it('should reject an incorrect password', async () => {
@@ -304,9 +315,7 @@ describe('Authentication Login (e2e)', () => {
         },
       });
 
-      expect(response.headers['x-refresh-token']).toEqual(
-        expect.any(String),
-      );
+      expect(response.headers['x-refresh-token']).toEqual(expect.any(String));
     });
   });
 });
