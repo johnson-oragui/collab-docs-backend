@@ -24,12 +24,17 @@ import { OrganisationApiKeyModule } from './organisation-api-key/organisation-ap
 import { UserSessionTokenModule } from './user-session-token/user-session-token.module';
 import { UserSessionModule } from './user_sessions/user-session.module';
 import { LoginLockoutModule } from './login-lockout/login-lockout.module';
-import { PasswordResetModule } from './password-recovery/password-recovery.module';
+import { PasswordRecoveryModule } from './password-recovery/password-recovery.module';
+import { EmailModule } from './email/email.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { EmailOutboxModule } from './email-outbox/email-outbox.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnvConfig }),
+    ScheduleModule.forRoot(),
     DatabaseModule,
+    EmailModule,
     LoginLockoutModule,
     UserModule,
     ProfileModule,
@@ -45,7 +50,8 @@ import { PasswordResetModule } from './password-recovery/password-recovery.modul
     OrganisationApiKeyModule,
     UserSessionTokenModule,
     UserSessionModule,
-    PasswordResetModule,
+    PasswordRecoveryModule,
+    EmailOutboxModule,
   ],
   controllers: [AppController],
   providers: [
