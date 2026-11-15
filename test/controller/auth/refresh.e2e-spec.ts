@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { randomUUID } from 'node:crypto';
 
 import { createE2eApp } from '@/test/fixtures/create-e2e-app';
@@ -19,6 +19,7 @@ describe('Authentication Refresh (e2e)', () => {
   let app: INestApplication;
   let http: ReturnType<typeof createHttpClient>;
   let dataSource: DataSource;
+  let userRepository: Repository<UserEntity>;
 
   const testUsers: Array<{
     userId: string;
@@ -53,6 +54,8 @@ describe('Authentication Refresh (e2e)', () => {
 
     const userId = registrationResponse.body.data.user.id;
     const organisationId = registrationResponse.body.data.organisation.id;
+
+    await userRepository.sql`UPDATE collabdocs_users SET email_verified_at = NOW() WHERE id = ${userId}`;
 
     testUsers.push({
       userId,
@@ -95,6 +98,7 @@ describe('Authentication Refresh (e2e)', () => {
 
     http = createHttpClient(app);
     dataSource = app.get(DataSource);
+    userRepository = dataSource.getRepository(UserEntity);
   });
 
   afterAll(async () => {
