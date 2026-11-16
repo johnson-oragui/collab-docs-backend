@@ -29,11 +29,13 @@ import { EmailModule } from './email/email.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EmailOutboxModule } from './email-outbox/email-outbox.module';
 import { EmailVerificationModule } from './email-verification/email-verification.module';
+import { AppGraphQLModule } from './graphql/graphql.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnvConfig }),
     ScheduleModule.forRoot(),
+    AppGraphQLModule,
     DatabaseModule,
     EmailModule,
     LoginLockoutModule,

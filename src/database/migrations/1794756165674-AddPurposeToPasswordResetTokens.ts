@@ -7,9 +7,20 @@ export class AddPurposeToPasswordResetTokens1794756165674 implements MigrationIn
     await queryRunner.query(
       `DROP INDEX "public"."idx_password_reset_tokens_user_status"`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."collabdocs_password_reset_tokens_purpose_enum" AS ENUM('PASSWORD_RESET', 'EMAIL_VERIFICATION')`,
-    );
+    await queryRunner.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_type t
+          JOIN pg_namespace n ON n.oid = t.typnamespace
+          WHERE t.typname = 'collabdocs_password_reset_tokens_purpose_enum'
+          AND n.nspname = 'public'
+        ) THEN
+          CREATE TYPE "public"."collabdocs_password_reset_tokens_purpose_enum"
+          AS ENUM ('PASSWORD_RESET', 'EMAIL_VERIFICATION');
+        END IF;
+      END $$;
+    `);
     await queryRunner.query(
       `ALTER TABLE "collabdocs_password_reset_tokens" ADD "purpose" "public"."collabdocs_password_reset_tokens_purpose_enum" NOT NULL DEFAULT 'PASSWORD_RESET'`,
     );

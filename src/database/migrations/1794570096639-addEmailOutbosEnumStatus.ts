@@ -10,9 +10,20 @@ export class AddEmailOutbosEnumStatus1794570096639 implements MigrationInterface
     await queryRunner.query(
       `ALTER TABLE "collabdocs_email_outbox" DROP COLUMN "status"`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."collabdocs_email_outbox_status_enum" AS ENUM('PENDING', 'QUEUED', 'SENT', 'FAILED')`,
-    );
+    await queryRunner.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_type t
+          JOIN pg_namespace n ON n.oid = t.typnamespace
+          WHERE t.typname = 'collabdocs_email_outbox_status_enum'
+          AND n.nspname = 'public'
+        ) THEN
+          CREATE TYPE "public"."collabdocs_email_outbox_status_enum"
+          AS ENUM ('PENDING', 'QUEUED', 'SENT', 'FAILED');
+        END IF;
+      END $$;
+    `);
     await queryRunner.query(
       `ALTER TABLE "collabdocs_email_outbox" ADD "status" "public"."collabdocs_email_outbox_status_enum" NOT NULL DEFAULT 'PENDING'`,
     );

@@ -12,6 +12,7 @@ import express from 'express';
 import { AppModule } from '@/app.module';
 import { AllExceptionsFilter } from '@/commons/middlewares/http-exception.filter';
 import { GmailSmtpService } from '@/gmail-smtp/gmail-smtp.service';
+import { EmailProcessor } from '@/email/email.processor';
 
 export async function createE2eApp(
   metadata?: ModuleMetadata,
@@ -30,6 +31,12 @@ export async function createE2eApp(
     .useValue({
       verifyConnection: jest.fn().mockResolvedValue(undefined),
       send: jest.fn().mockResolvedValue(undefined),
+    })
+    .overrideProvider(EmailProcessor)
+    .useValue({
+      process: jest.fn().mockResolvedValue(undefined),
+      onCompleted: jest.fn().mockResolvedValue(undefined),
+      onFailed: jest.fn().mockResolvedValue(undefined),
     });
 
   const moduleFixture = await moduleBuilder.compile();

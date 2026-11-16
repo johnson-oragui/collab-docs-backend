@@ -4,13 +4,15 @@ import { Request, Response, NextFunction } from 'express';
 @Injectable()
 export class CatchAllMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    const userAgent = req.headers['user-agent'];
+
+    const userAgent = req?.headers?.['user-agent'];
     if (userAgent === null || !userAgent || userAgent?.trim() === '') {
       throw new HttpException({ message: 'Forbidden', statusCode: 403 }, 403);
     }
     if (
       req.path.startsWith('/api') ||
-      ['/favicon.ico', '/'].includes(req.path) || req.path === "/"
+      ['/favicon.ico', '/'].includes(req.path) ||
+      req.path === '/'
     ) {
       return next();
     }

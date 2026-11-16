@@ -15,6 +15,10 @@ import { OrganisationMembershipEntity } from '@/organisation-memberships/organis
 import { UserSessionModule } from '@/user_sessions/user-session.module';
 import { OrganisationRepository } from '@/organisations/organisation.repository';
 import { OrganisationEntity } from '@/organisations/organisations.entity';
+import { CustomJwtAuthGuard } from '@/commons/guards/jwt.auth.guard';
+import { UserResolver } from './graphql/user.resolver';
+import { OrganisationApiKeyEntity } from '@/organisation-api-key/organisation-api-key.entity';
+import { OrganisationApiKeyModule } from '@/organisation-api-key/organisation-api-key.module';
 
 @Module({
   providers: [
@@ -23,6 +27,8 @@ import { OrganisationEntity } from '@/organisations/organisations.entity';
     IsEMailUniqueConstraint,
     IsOrgEMailUniqueConstraint,
     OrganisationRepository,
+    UserResolver,
+    CustomJwtAuthGuard,
   ],
   controllers: [UserController],
   exports: [
@@ -39,8 +45,10 @@ import { OrganisationEntity } from '@/organisations/organisations.entity';
       ProfileEntity,
       OrganisationMembershipEntity,
       OrganisationEntity,
+      OrganisationApiKeyEntity,
     ]),
     UserSessionModule,
+    OrganisationApiKeyModule,
   ],
 })
 export default class UserModule {}

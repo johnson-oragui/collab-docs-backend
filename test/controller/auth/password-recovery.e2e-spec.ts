@@ -98,6 +98,10 @@ describe('TEST PasswordRecovery (e2e)', () => {
 
   afterAll(async () => {
     await emailOutboxRepository.deleteAll();
+    await passwordResetTokenRepository.delete({
+      user: { id: user.id },
+      purpose: EmailEventTypeEnum.PASSWORD_RESET,
+    });
     await sessionTokenRepository.delete({
       session: { id: In(objectIDs) },
     });
@@ -107,7 +111,7 @@ describe('TEST PasswordRecovery (e2e)', () => {
     });
 
     await organisationMembershipRepository.delete({ id: In(objectIDs) });
-    await roleRepository.delete({ id: In(objectIDs) });
+    // await roleRepository.delete({ id: In(objectIDs) });
     await organisationRepository.delete({
       owner: { id: user.id },
     });
@@ -156,6 +160,10 @@ describe('TEST PasswordRecovery (e2e)', () => {
 
     const ipAddress = generateRandomIPv4();
 
+    await passwordResetTokenRepository.delete({
+      user: { id: user.id },
+      purpose: EmailEventTypeEnum.PASSWORD_RESET,
+    });
     const response = await http
       .post('/api/v1/auth/password/forgot')
       .set('X-Forwarded-For', ipAddress)
@@ -195,6 +203,12 @@ describe('TEST PasswordRecovery (e2e)', () => {
 
     // The raw token must never appear in the HTTP response.
     expect(JSON.stringify(response.body)).not.toContain(rawToken);
+
+    await passwordResetTokenRepository.delete({
+      user: { id: user.id },
+      purpose: EmailEventTypeEnum.PASSWORD_RESET,
+      tokenHash,
+    });
 
     getPasswordTokenSpy.mockClear();
     getPasswordTokenSpy.mockRestore();
@@ -264,6 +278,11 @@ describe('TEST PasswordRecovery (e2e)', () => {
 
     expect(savedToken?.usedAt).toBeInstanceOf(Date);
     expect(savedToken?.revokedAt).toBeNull();
+    await passwordResetTokenRepository.delete({
+      user: { id: user.id },
+      purpose: EmailEventTypeEnum.PASSWORD_RESET,
+      tokenHash,
+    });
   });
 
   it('should revoke other outstanding reset tokens after a successful reset', async () => {
