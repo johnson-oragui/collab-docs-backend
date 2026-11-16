@@ -122,7 +122,29 @@ export class EmailProcessor extends WorkerHost {
   }
 
   @OnWorkerEvent('completed')
-  onCompleted(job: Job<IEmailJobData>): void {
+  async onCompleted(job: Job<IEmailJobData>): Promise<void> {
+    if (job?.id?.startsWith('collabdocs-email-outbox-')) {
+      const recordId = job.id?.split('collabdocs-email-outbox-')[1];
+      await this.outboxRepository
+        .createQueryBuilder()
+        .update(EmailOutboxEntity)
+        .set({
+          status: EmailOutboxStatusEnum.SENT,
+          sentAt: new Date(),
+          lastError: null,
+          attempts: () => '"attempts" + 1',
+        })
+        .where('id = :id', { id: recordId })
+        .andWhere('status IN (:...statuses)', {
+          statuses: [
+            EmailOutboxStatusEnum.PENDING,
+            EmailOutboxStatusEnum.QUEUED,
+            EmailOutboxStatusEnum.FAILED,
+          ],
+        })
+        .execute();
+    }
+
     this.logger.log(`Email job completed: ${job.id}`);
   }
 

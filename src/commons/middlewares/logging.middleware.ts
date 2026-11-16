@@ -11,39 +11,47 @@ export class LoggerMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     const requestId = uuidv7();
     asyncStore.run({ requestId }, () => {
-      const userAgent: string | undefined = req.headers['user-agent'];
+      try {
+        const userAgent: string | undefined = req.headers['user-agent'];
 
-      const xForwardedFor = req.headers['x-forwarded-for'];
-      const requestData: Record<string, any> = {
-        timestamp: new Date().toISOString(),
-        userAgent,
-        userIp: req.ip,
-        xForwardedFor: this.getForwardedFor(xForwardedFor),
-        path: req.path,
-        params: req.query,
-        method: req.method,
-        body: req.body ? JSON.stringify(this.obfuscate(req.body)) : {},
-        requestId,
-      };
-      res.setHeader('x-request-id', requestId);
-
-      logger.info('InBound Request ✅✅✅✅✅✅✅✅✅', requestData);
-
-      res.on('finish', () => {
-        const responseData: Record<string, any> = {
+        const xForwardedFor = req.headers['x-forwarded-for'];
+        const requestData: Record<string, any> = {
           timestamp: new Date().toISOString(),
+          userAgent,
+          userIp: req.ip,
+          xForwardedFor: this.getForwardedFor(xForwardedFor),
           path: req.path,
+          params: req.query,
           method: req.method,
-          statusCode: res.statusCode,
-          userId: req.decodedUser?.sub || 'Guest',
-          organisationRole: req.decodedUser?.organisationRole || null,
-          organisationId: req.decodedUser?.organisationId || null,
+          body: req.body ? JSON.stringify(this.obfuscate(req.body)) : {},
           requestId,
         };
-        logger.info('OutBound Response ⏩⏩⏩⏩⏩⏩⏩⏩⏩⏩⏩⏩', responseData);
-      });
+        res.setHeader('x-request-id', requestId);
 
-      next();
+        logger.info('InBound Request ✅✅✅✅✅✅✅✅✅', requestData);
+
+        res.on('finish', () => {
+          const responseData: Record<string, any> = {
+            timestamp: new Date().toISOString(),
+            path: req.path,
+            method: req.method,
+            statusCode: res.statusCode,
+            userId: req.decodedUser?.sub || 'Guest',
+            organisationRole: req.decodedUser?.organisationRole || null,
+            organisationId: req.decodedUser?.organisationId || null,
+            requestId,
+          };
+          logger.info(
+            'OutBound Response ⏩⏩⏩⏩⏩⏩⏩⏩⏩⏩⏩⏩',
+            responseData,
+          );
+        });
+
+        next();
+      } catch (error) {
+        console.error('Error in Logger middleware; ', error);
+        throw error;
+      }
     });
   }
 
