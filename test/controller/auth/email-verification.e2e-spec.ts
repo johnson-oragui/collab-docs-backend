@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { randomBytes, randomUUID } from 'node:crypto';
 
 import { createE2eApp } from '@/test/fixtures/create-e2e-app';
@@ -14,12 +14,16 @@ import { UserSessionEntity } from '@/user_sessions/user-session.entity';
 import { UserSessionTokenEntity } from '@/user-session-token/user-session-token.entity';
 
 import { EmailVerificationService } from '@/email-verification/email-verification.service';
+import { PasswordResetTokenEntity } from '@/password-recovery/password-recovery.entity';
+import { EmailEventTypeEnum } from '@/database/database.enums';
+import { generateRandomIPv4 } from '@/commons/util/generateRandomIPv4';
 
 describe('Authentication Account Verification (e2e)', () => {
   let app: INestApplication;
   let http: ReturnType<typeof createHttpClient>;
   let dataSource: DataSource;
   let emailVerificationService: EmailVerificationService;
+  let passwordResetTokenRepository: Repository<PasswordResetTokenEntity>;
 
   let registrationPayload: ReturnType<typeof createRegistrationPayload>;
   let registeredUserId: string;
@@ -52,6 +56,10 @@ describe('Authentication Account Verification (e2e)', () => {
     dataSource = app.get(DataSource);
     emailVerificationService = app.get(EmailVerificationService);
 
+    passwordResetTokenRepository = dataSource.getRepository(
+      PasswordResetTokenEntity,
+    );
+
     registrationPayload = createRegistrationPayload();
 
     rawToken = randomBytes(32).toString('base64url');
@@ -76,6 +84,11 @@ describe('Authentication Account Verification (e2e)', () => {
         relations: {
           profile: true,
         },
+      });
+
+      await passwordResetTokenRepository.delete({
+        user: { id: registeredUserId },
+        purpose: EmailEventTypeEnum.EMAIL_VERIFICATION,
       });
 
       const organisations = await dataSource
@@ -165,8 +178,10 @@ describe('Authentication Account Verification (e2e)', () => {
   });
 
   it('should reject a non-verified email before email verification', async () => {
+    const ipAddress = generateRandomIPv4();
     await http
       .post('/api/v1/auth/login')
+      .set('X-Forwarded-For', ipAddress)
       .send({
         email: registrationPayload.email,
         password: registrationPayload.password,
@@ -175,8 +190,10 @@ describe('Authentication Account Verification (e2e)', () => {
   });
 
   it('should accept a verified email after email verification', async () => {
+    const ipAddress = generateRandomIPv4();
     const response = await http
       .post('auth/verify-email')
+      .set('X-Forwarded-For', ipAddress)
       .send({
         token: rawToken,
       })
@@ -188,6 +205,7 @@ describe('Authentication Account Verification (e2e)', () => {
     // Reject used token
     await http
       .post('auth/verify-email')
+      .set('X-Forwarded-For', ipAddress)
       .send({
         token: rawToken,
       })
@@ -195,6 +213,7 @@ describe('Authentication Account Verification (e2e)', () => {
 
     await http
       .post('/api/v1/auth/login')
+      .set('X-Forwarded-For', ipAddress)
       .send({
         email: registrationPayload.email,
         password: registrationPayload.password,
