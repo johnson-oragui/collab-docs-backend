@@ -2,12 +2,14 @@ import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RoleEntity } from './roles.entity';
-import {
-  PermissionEntity,
-  PermissionEnum,
-} from '../permissions/permissions.entity';
+import { PermissionEntity } from '../permissions/permissions.entity';
 import { RoleEnum, RoleScopeEnum } from '../database/database.enums';
 import { PermissionsSeedService } from '@/permissions/permissions-seed.service';
+import {
+  DEFAULT_ORG_ADMIN_PERMISSION_ENUM,
+  DEFAULT_ORG_MEMBER_PERMISSION_ENUM,
+  DEFAULT_ORG_SUB_ADMIN_PERMISSION_ENUM,
+} from '@/permissions/permission.registry';
 
 @Injectable()
 export class RolesSeedService implements OnModuleInit {
@@ -31,6 +33,24 @@ export class RolesSeedService implements OnModuleInit {
 
     const allPermissions = await this.permissionRepository.find();
 
+    const orgAdminPermissions = allPermissions.filter((seededPermission) =>
+      PermissionEntity.getValidPermissions(
+        DEFAULT_ORG_ADMIN_PERMISSION_ENUM,
+      ).includes(seededPermission.name),
+    );
+
+    const orgSubAdminPermissions = allPermissions.filter((seededPermission) =>
+      PermissionEntity.getValidPermissions(
+        DEFAULT_ORG_SUB_ADMIN_PERMISSION_ENUM,
+      ).includes(seededPermission.name),
+    );
+
+    const orgMemberPermissions = allPermissions.filter((seededPermission) =>
+      PermissionEntity.getValidPermissions(
+        DEFAULT_ORG_MEMBER_PERMISSION_ENUM,
+      ).includes(seededPermission.name),
+    );
+
     if (allPermissions.length === 0) {
       this.logger.warn(
         'No permissions found in database. Skipping role seeding.',
@@ -50,28 +70,21 @@ export class RolesSeedService implements OnModuleInit {
         scope: RoleScopeEnum.ORGANISATION,
         description:
           'Organization administrator managing members, roles, and documents',
-        permissions: allPermissions.filter(
-          (p) =>
-            p.name.startsWith('organisation') ||
-            p.name.startsWith('document') ||
-            p.name.startsWith('role'),
-        ),
+        permissions: orgAdminPermissions,
+      },
+      {
+        name: RoleEnum.ORG_SUB_ADMIN,
+        scope: RoleScopeEnum.ORGANISATION,
+        description:
+          'Organization sub-administrator managing members, roles, and documents',
+        permissions: orgSubAdminPermissions,
       },
       {
         name: RoleEnum.ORG_MEMBER,
         scope: RoleScopeEnum.ORGANISATION,
         description:
           'Standard organization member with read/write access to documents',
-        permissions: allPermissions.filter(
-          (p) =>
-            p.name === PermissionEnum.DOCUMENT.CREATE ||
-            p.name === PermissionEnum.DOCUMENT.READ ||
-            p.name === PermissionEnum.DOCUMENT.UPDATE ||
-            p.name === PermissionEnum.DOCUMENT_INVITATION.CREATE ||
-            p.name === PermissionEnum.DOCUMENT_INVITATION.UPDATE ||
-            p.name === PermissionEnum.DOCUMENT_INVITATION.READ ||
-            p.name.includes(':read'),
-        ),
+        permissions: orgMemberPermissions,
       },
     ];
 
