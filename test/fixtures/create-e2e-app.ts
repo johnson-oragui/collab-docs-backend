@@ -2,6 +2,7 @@ import {
   INestApplication,
   ModuleMetadata,
   ValidationPipe,
+  ValidationPipeOptions,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
@@ -13,9 +14,16 @@ import { AppModule } from '@/app.module';
 import { AllExceptionsFilter } from '@/commons/middlewares/http-exception.filter';
 import { GmailSmtpService } from '@/gmail-smtp/gmail-smtp.service';
 import { EmailProcessor } from '@/email/email.processor';
+import { EmailOutboxDispatcherService } from '@/email/email-outbox-dispatcher.service';
 
 export async function createE2eApp(
   metadata?: ModuleMetadata,
+  validationPipeOptions: ValidationPipeOptions = {
+    whitelist: true,
+    forbidNonWhitelisted: false,
+    forbidUnknownValues: true,
+    transform: true,
+  },
 ): Promise<INestApplication> {
   const expressApp = express();
 
@@ -37,6 +45,11 @@ export async function createE2eApp(
       process: jest.fn().mockResolvedValue(undefined),
       onCompleted: jest.fn().mockResolvedValue(undefined),
       onFailed: jest.fn().mockResolvedValue(undefined),
+    })
+    .overrideProvider(EmailOutboxDispatcherService)
+    .useValue({
+      dispatchPendingEmails: jest.fn().mockResolvedValue(undefined),
+      dispatchBatch: jest.fn().mockResolvedValue(undefined),
     });
 
   const moduleFixture = await moduleBuilder.compile();
@@ -67,14 +80,7 @@ export async function createE2eApp(
     fallbackOnErrors: true,
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: false,
-      forbidUnknownValues: true,
-      transform: true,
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
 
   app.useGlobalFilters(new AllExceptionsFilter());
 
