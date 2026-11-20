@@ -1,9 +1,10 @@
 import { UserSessionTokenEntity } from '@/user-session-token/user-session-token.entity';
 import { UserSessionEntity } from '@/user_sessions/user-session.entity';
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserSessionService } from './user-session.service';
 
+@Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserSessionEntity, UserSessionTokenEntity]),
