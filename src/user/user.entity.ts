@@ -4,6 +4,7 @@ import { ProfileEntity } from '../profile/profile.entity';
 import { OrganisationMembershipEntity } from '../organisation-memberships/organisation-memberships.entity';
 import { OrganisationApiKeyEntity } from '@/organisation-api-key/organisation-api-key.entity';
 import { UserSessionEntity } from '@/user_sessions/user-session.entity';
+import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/org_membership_invitation.entity';
 
 @Entity('collabdocs_users')
 export class UserEntity extends CustomBaseEntity {
@@ -51,4 +52,18 @@ export class UserEntity extends CustomBaseEntity {
 
   @OneToMany(() => UserSessionEntity, (session) => session.user)
   declare sessions: UserSessionEntity[];
+
+  @OneToMany(
+    () => OrganisationMembershipInvitationEntity,
+    (sentInvitations) => sentInvitations.invitedBy,
+    { cascade: false },
+  )
+  declare sentInvitations: OrganisationMembershipInvitationEntity[];
+
+  @OneToMany(
+    () => OrganisationMembershipInvitationEntity,
+    (sentInvitations) => sentInvitations.revokedBy,
+    { cascade: false },
+  )
+  declare revokedInvitations: OrganisationMembershipInvitationEntity[];
 }
