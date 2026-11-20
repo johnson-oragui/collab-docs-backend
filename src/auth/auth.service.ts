@@ -44,16 +44,15 @@ import { handleServiceMethodError } from '@/commons/util/errorHandler';
 import { LoginLockoutService } from '@/login-lockout/login-lockout.service';
 import { LoginRateLimitService } from '@/login-lockout/login-rate-limit.service';
 import { EmailVerificationService } from '@/email-verification/email-verification.service';
+import { MembershipPermissionEntity } from '@/membership_permissions/membership_permissions.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-
     @InjectRepository(OrganisationMembershipEntity)
     private readonly membershipRepository: Repository<OrganisationMembershipEntity>,
-
     @InjectRepository(UserSessionEntity)
     private readonly sessionRepository: Repository<UserSessionEntity>,
 
@@ -85,6 +84,7 @@ export class AuthService {
               scope: RoleScopeEnum.ORGANISATION,
               isDeleted: false,
             },
+            relations: { permissions: true },
           });
 
           if (!adminRole) {
@@ -157,7 +157,6 @@ export class AuthService {
             organisation,
           );
 
-          // make the registering user an active organisation administrator.
           const membership = manager.create(OrganisationMembershipEntity, {
             user: savedUser,
             organisation: savedOrganisation,
@@ -172,7 +171,16 @@ export class AuthService {
             membership,
           );
 
-          // record the initial ownership of the organisation.
+          const membershipPermissions = adminRole.permissions.map(
+            (permission) =>
+              manager.create(MembershipPermissionEntity, {
+                membership: savedMembership,
+                permission,
+              }),
+          );
+
+          await manager.save(MembershipPermissionEntity, membershipPermissions);
+
           const ownershipHistory = manager.create(
             OrganisationOwnershipHistoryEntity,
             {

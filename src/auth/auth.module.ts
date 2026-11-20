@@ -19,6 +19,7 @@ import { DatabaseModule } from '@/database/database.module';
 import { OrganisationModule } from '@/organisations/module';
 import { LoginLockoutModule } from '@/login-lockout/login-lockout.module';
 import { EmailVerificationModule } from '@/email-verification/email-verification.module';
+import { MembershipPermissionModule } from '@/membership_permissions/membership_permissions.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { EmailVerificationModule } from '@/email-verification/email-verification
     OrganisationModule,
     LoginLockoutModule,
     EmailVerificationModule,
+    MembershipPermissionModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],
