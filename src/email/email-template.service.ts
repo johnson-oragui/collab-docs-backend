@@ -241,4 +241,56 @@ export class EmailTemplateService {
       text,
     };
   }
+
+  createOrganisationInvitationEmail(
+    options: IEmailTemplateOptions,
+  ): IEmailPayload {
+    const greeting = this.getGreeting(options.recipientName);
+
+    const html = this.getLayout(`
+      <p>${greeting}</p>
+
+      <p>
+        You have been invited to ${options.organisationName ?? ''} Organisation.
+      </p>
+
+      <p>
+        Use the button below to accept/decline Invitation.
+      </p>
+
+      ${this.getActionButton(options.actionUrl, 'Reset Password')}
+
+      <p>
+        This link expires in
+        <strong>${this.escapeHtml(options.expiresIn)}</strong>.
+      </p>
+
+      <p>
+        If the button does not work, copy and paste this link
+        into your browser:
+      </p>
+
+      <p style="word-break: break-all;">
+        ${this.escapeHtml(options.actionUrl)}
+      </p>
+    `);
+
+    const text = [
+      greeting,
+      '',
+      `You have been invited to ${options.organisationName ?? ''} Organisation.`,
+      '',
+      `Accept/Decline using this link: ${options.actionUrl}`,
+      '',
+      `This link expires in ${options.expiresIn}.`,
+      '',
+    ].join('\n');
+
+    return {
+      to: options.recipientEmail,
+      subject: 'Reset your Collab Docs password',
+      html,
+      text,
+    };
+  }
 }
