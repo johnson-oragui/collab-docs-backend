@@ -15,6 +15,7 @@ import {
   OrganisationStatusEnum,
   type TOrganisationStatusEnum,
 } from '@/database/database.enums';
+import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/org_membership_invitation.entity';
 
 @Entity('collabdocs_organisations')
 export class OrganisationEntity extends CustomBaseEntity {
@@ -69,4 +70,11 @@ export class OrganisationEntity extends CustomBaseEntity {
     { cascade: true },
   )
   declare organisationApiKeys: OrganisationApiKeyEntity[];
+
+  @OneToMany(
+    () => OrganisationMembershipInvitationEntity,
+    (organisation) => organisation.organisation,
+    { cascade: true },
+  )
+  declare membershipInvitations: OrganisationMembershipInvitationEntity[];
 }
