@@ -35,5 +35,7 @@ declare namespace NodeJS {
     PASSWORD_RESET_TOKEN_EXPIRY_MINUTES: string;
 
     EMAIL_ENCRYPTION_KEY: string;
+
+    ACCOUNT_VERIFICATION_TOKEN_EXPIRY_DAYS: string;
   }
 }
