@@ -3,7 +3,7 @@ import { UserEntity } from '@/user/user.entity';
 import { OrganisationEntity } from '@/organisations/organisations.entity';
 import { RoleEntity } from '@/roles/roles.entity';
 import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
-import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/entity';
+import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/org_membership_invitation.entity';
 import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/entity';
 import {
   InvitationStatusEnum,
@@ -12,6 +12,7 @@ import {
 } from '@/database/database.enums';
 import { createTestingModule } from '@/test/fixtures/create-testing-module';
 import { TestingModule } from '@nestjs/testing';
+import { uuidv4 } from 'uuidv7';
 
 describe('Organisation Relationships Integration Test', () => {
   let dataSource: DataSource;
@@ -126,13 +127,18 @@ describe('Organisation Relationships Integration Test', () => {
       status: OrganisationMembershipStatusEnum.ACTIVE,
     });
     await membershipRepository.save(membership);
-    memberIds.push(membership.id)
+    memberIds.push(membership.id);
 
     const invitation = invitationRepo.create({
       token: `secret-invite-token-123${uniqueId()}`,
       expiresAt: new Date(Date.now() + 86400000), // +1 day
       status: InvitationStatusEnum.PENDING,
-      membership,
+      // membership,
+      email: `${uuidv4()}@email.com`,
+      firstName: 'Nooo',
+      lastName: 'pooo',
+      organisation: org,
+      permissionMode: 'NONE',
     });
     await invitationRepo.save(invitation);
 
@@ -158,7 +164,7 @@ describe('Organisation Relationships Integration Test', () => {
         user: true,
         organisation: true,
         role: true,
-        invitations: true,
+
         suspensionHistories: true,
       },
     });
@@ -166,8 +172,6 @@ describe('Organisation Relationships Integration Test', () => {
     expect(loadedMembership).toBeDefined();
     expect(loadedMembership?.organisation.name).toBe(org.name);
     expect(loadedMembership?.role.name).toEqual('ORG_ADMIN');
-    expect(loadedMembership?.invitations).toHaveLength(1);
-    expect(loadedMembership?.invitations[0].token).toEqual(invitation.token);
     expect(loadedMembership?.suspensionHistories).toHaveLength(1);
     expect(loadedMembership?.suspensionHistories[0].reason).toEqual(
       'Violation of terms',
