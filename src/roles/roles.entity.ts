@@ -32,7 +32,7 @@ export class RoleEntity extends CustomBaseEntity {
     cascade: true,
   })
   @JoinTable({
-    name: 'collabdocs_role_permissions',
+    name: 'collabdocs_role_permission_templates',
     joinColumn: { name: 'role_id', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'permission_id', referencedColumnName: 'id' },
   })

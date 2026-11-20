@@ -79,6 +79,9 @@ class EnvironmentVariables {
 
   @IsString()
   declare EMAIL_ENCRYPTION_KEY: string;
+
+  @IsString()
+  declare ACCOUNT_VERIFICATION_TOKEN_EXPIRY_DAYS: string;
 }
 
 export function validateEnvConfig(

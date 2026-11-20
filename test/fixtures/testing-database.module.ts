@@ -8,7 +8,7 @@ import { RoleEntity } from '@/roles/roles.entity';
 import { PermissionEntity } from '@/permissions/permissions.entity';
 import { OrganisationEntity } from '@/organisations/organisations.entity';
 import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
-import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/entity';
+import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/org_membership_invitation.entity';
 import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/entity';
 import { OrganisationOwnershipHistoryEntity } from '@/organisation-ownership-history/organisation-ownership-history.entity';
 import { OrganisationApiKeyEntity } from '@/organisation-api-key/organisation-api-key.entity';
@@ -16,6 +16,9 @@ import { UserSessionTokenEntity } from '@/user-session-token/user-session-token.
 import { UserSessionEntity } from '@/user_sessions/user-session.entity';
 import { PasswordResetTokenEntity } from '@/password-recovery/password-recovery.entity';
 import { EmailOutboxEntity } from '@/email-outbox/email.entity';
+import { InvitationPermissionEntity } from '@/invitation_permissions/invitation_permissions.entity';
+import { MembershipPermissionEntity } from '@/membership_permissions/membership_permissions.entity';
+import { OrganisationAuditEntity } from '@/organisation_audit/organisation_audit.entity';
 
 @Module({
   imports: [
@@ -38,6 +41,9 @@ import { EmailOutboxEntity } from '@/email-outbox/email.entity';
       UserSessionEntity,
       PasswordResetTokenEntity,
       EmailOutboxEntity,
+      InvitationPermissionEntity,
+      MembershipPermissionEntity,
+      OrganisationAuditEntity,
     ]),
   ],
   exports: [

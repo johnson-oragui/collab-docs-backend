@@ -10,9 +10,12 @@ import { CustomBaseEntity } from '../database/base.entity';
 import { UserEntity } from '../user/user.entity';
 import { OrganisationEntity } from '../organisations/organisations.entity';
 import { RoleEntity } from '../roles/roles.entity';
-import { OrganisationMembershipStatusEnum, type TOrganisationMembershipStatusEnum } from '../database/database.enums';
+import {
+  OrganisationMembershipStatusEnum,
+  type TOrganisationMembershipStatusEnum,
+} from '../database/database.enums';
 import { OrganisationMembershipSuspensionHistoryEntity } from '../org_membership_suspension_histories/entity';
-import { OrganisationMembershipInvitationEntity } from '../org_membership_invitation/entity';
+import { MembershipPermissionEntity } from '@/membership_permissions/membership_permissions.entity';
 
 @Entity('collabdocs_organisation_memberships')
 @Index(['user', 'organisation'], { unique: true }) // Ensures a user can only belong to an org once
@@ -57,9 +60,8 @@ export class OrganisationMembershipEntity extends CustomBaseEntity {
   declare suspensionHistories: OrganisationMembershipSuspensionHistoryEntity[];
 
   @OneToMany(
-    () => OrganisationMembershipInvitationEntity,
-    (invitation) => invitation.membership,
-    { cascade: true },
+    () => MembershipPermissionEntity,
+    (membershipPermission) => membershipPermission.membership,
   )
-  declare invitations: OrganisationMembershipInvitationEntity[];
+  declare permissions: MembershipPermissionEntity[];
 }

@@ -30,9 +30,6 @@ export class UserSessionService {
     private readonly configService: ConfigService,
     @InjectRepository(UserSessionEntity)
     private readonly sessionRepository: Repository<UserSessionEntity>,
-
-    @InjectRepository(UserSessionTokenEntity)
-    private readonly sessionTokenRepository: Repository<UserSessionTokenEntity>,
   ) {}
 
   /**

@@ -17,6 +17,7 @@ export interface IEncryptedEmailPayload {
 export interface IEmailTemplateOptions {
   recipientEmail: string;
   recipientName?: string;
+  organisationName?: string;
   actionUrl: string;
   expiresIn: string;
 }

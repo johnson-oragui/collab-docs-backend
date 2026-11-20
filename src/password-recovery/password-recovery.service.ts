@@ -298,7 +298,7 @@ export class PasswordRecoveryService {
   }
 
   private hashToken(rawToken: string): string {
-    return createHash('sha256').update(rawToken).digest('hex');
+    return createHash('sha256').update(rawToken, 'utf-8').digest('hex');
   }
   private getPasswordToken() {
     return randomBytes(PASSWORD_RECOVERY.TOKEN_BYTES).toString('base64url');

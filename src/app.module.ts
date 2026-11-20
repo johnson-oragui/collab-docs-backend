@@ -12,7 +12,7 @@ import UserModule from './user/user.module';
 import { CustomJwtModule } from './jwt-service/jwt.module';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
-import { OrganisationMembershipInvitationModule } from './org_membership_invitation/module';
+import { OrganisationMembershipInvitationModule } from './org_membership_invitation/org_membership_invitation.module';
 import { OrganisationMembershipSuspensionHistoryModule } from './org_membership_suspension_histories/module';
 import { OrganisationMembershipEntityModule } from './organisation-memberships/module';
 import { OrganisationModule } from './organisations/module';
@@ -30,6 +30,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { EmailOutboxModule } from './email-outbox/email-outbox.module';
 import { EmailVerificationModule } from './email-verification/email-verification.module';
 import { AppGraphQLModule } from './graphql/graphql.module';
+import { MembershipPermissionModule } from './membership_permissions/membership_permissions.module';
+import { OrganisationAuditModule } from './organisation_audit/organisation_audit.module';
 
 @Module({
   imports: [
@@ -56,6 +58,8 @@ import { AppGraphQLModule } from './graphql/graphql.module';
     PasswordRecoveryModule,
     EmailOutboxModule,
     EmailVerificationModule,
+    MembershipPermissionModule,
+    OrganisationAuditModule,
   ],
   controllers: [AppController],
   providers: [

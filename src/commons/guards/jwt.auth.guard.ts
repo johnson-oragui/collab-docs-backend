@@ -41,6 +41,15 @@ export class CustomJwtAuthGuard implements CanActivate {
 
     const apiKeyHeader = req.headers['x-api-key'];
     if (apiKeyHeader) {
+      /**
+       * TODO: checks for APIKey
+       * API key must be valid and unexpired.
+       * Its associated organisation must match the organisation context.
+       * Its associated user must be an active member of that organisation.
+       * The user must have the required invitation permissions.
+       * The API key must have permission to perform operations.
+       * API-key authentication must not bypass membership or permission checks.
+       */
       const apiKeyEntity = await this.apiKeysService.validateApiKey(
         apiKeyHeader as string,
       );

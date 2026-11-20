@@ -7,6 +7,7 @@ export type TRoleScopeEnum = (typeof RoleScopeEnum)[keyof typeof RoleScopeEnum];
 export const RoleEnum = Object.freeze({
   APP_SUPER_ADMIN: 'APP_SUPER_ADMIN',
   ORG_ADMIN: 'ORG_ADMIN',
+  ORG_SUB_ADMIN: 'ORG_SUB_ADMIN',
   ORG_MEMBER: 'ORG_MEMBER',
 } as const);
 
@@ -65,6 +66,7 @@ export type TEmailOutboxStatusEnum =
 export const EmailEventTypeEnum = Object.freeze({
   PASSWORD_RESET: 'PASSWORD_RESET',
   EMAIL_VERIFICATION: 'EMAIL_VERIFICATION',
+  ORGANISATION_INVITATION: 'ORGANISATION_INVITATION',
 } as const);
 
 export type TEmailEventTypeEnum =
