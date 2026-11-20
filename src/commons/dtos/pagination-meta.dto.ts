@@ -1,6 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class PaginationMetaDto {
+  constructor(partial: Partial<PaginationMetaDto>) {
+    Object.assign(this, partial);
+  }
   @ApiProperty({
     example: 1,
     description: 'Current page number (1-indexed).',
