@@ -9,7 +9,7 @@ import { PermissionEntity } from '@/permissions/permissions.entity';
 import { OrganisationEntity } from '@/organisations/organisations.entity';
 import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
 import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/org_membership_invitation.entity';
-import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/entity';
+import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/org_membership_suspension_histories.entity';
 import { OrganisationOwnershipHistoryEntity } from '@/organisation-ownership-history/organisation-ownership-history.entity';
 import { OrganisationApiKeyEntity } from '@/organisation-api-key/organisation-api-key.entity';
 import { UserSessionTokenEntity } from '@/user-session-token/user-session-token.entity';

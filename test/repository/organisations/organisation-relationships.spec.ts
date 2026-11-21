@@ -4,7 +4,7 @@ import { OrganisationEntity } from '@/organisations/organisations.entity';
 import { RoleEntity } from '@/roles/roles.entity';
 import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
 import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/org_membership_invitation.entity';
-import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/entity';
+import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/org_membership_suspension_histories.entity';
 import {
   InvitationStatusEnum,
   OrganisationMembershipStatusEnum,
