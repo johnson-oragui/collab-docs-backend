@@ -16,6 +16,7 @@ export type TRoleEnum = (typeof RoleEnum)[keyof typeof RoleEnum];
 export const OrganisationMembershipStatusEnum = Object.freeze({
   ACTIVE: 'ACTIVE',
   PENDING: 'PENDING',
+  SUSPENDED: 'SUSPENDED',
 } as const);
 
 export type TOrganisationMembershipStatusEnum =
