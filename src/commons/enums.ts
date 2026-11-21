@@ -22,7 +22,16 @@ export const OrganisationAuditEventEnum = Object.freeze({
   INVITATION_REVOKED: 'INVITATION_REVOKED',
   INVITATION_EXPIRED: 'INVITATION_EXPIRED',
   INVITATION_RESENT: 'INVITATION_RESENT',
+  MEMBER_SUSPENDED: 'MEMBER_SUSPENDED',
+  MEMBER_UNSUSPENDED: 'MEMBER_UNSUSPENDED',
+  MEMBERSHIP_PERMISSIONS_UPDATED: 'MEMBERSHIP_PERMISSIONS_UPDATED',
 } as const);
 
 export type TOrganisationAuditEventEnum =
   (typeof OrganisationAuditEventEnum)[keyof typeof OrganisationAuditEventEnum][keyof (typeof OrganisationAuditEventEnum)[keyof typeof OrganisationAuditEventEnum]];
+export const ActionEnum = Object.freeze({
+  SUSPENDED: 'SUSPENDED',
+  UNSUSPENDED: 'UNSUSPENDED',
+} as const);
+
+export type TActionEnum = (typeof ActionEnum)[keyof typeof ActionEnum];

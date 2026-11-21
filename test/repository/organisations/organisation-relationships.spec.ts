@@ -4,7 +4,7 @@ import { OrganisationEntity } from '@/organisations/organisations.entity';
 import { RoleEntity } from '@/roles/roles.entity';
 import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
 import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/org_membership_invitation.entity';
-import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/entity';
+import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/org_membership_suspension_histories.entity';
 import {
   InvitationStatusEnum,
   OrganisationMembershipStatusEnum,
@@ -68,10 +68,10 @@ describe('Organisation Relationships Integration Test', () => {
       memberIds.length = 0;
     }
 
-    if (roleIds.length) {
-      await roleRepository.delete({ id: In([...roleIds]) });
-      roleIds.length = 0;
-    }
+    // if (roleIds.length) {
+    //   await roleRepository.delete({ id: In([...roleIds]) });
+    //   roleIds.length = 0;
+    // }
 
     if (organisationIds.length) {
       await orgRepository.delete({ id: In([...organisationIds]) });
@@ -148,6 +148,8 @@ describe('Organisation Relationships Integration Test', () => {
       reason: 'Violation of terms',
       membership,
       suspendedTill: new Date(Date.now() + 7 * 86400000),
+      action: 'SUSPENDED',
+      actor: user,
     });
     await historyRepo.save(history);
 

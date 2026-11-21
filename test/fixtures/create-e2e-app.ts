@@ -15,6 +15,9 @@ import { AllExceptionsFilter } from '@/commons/middlewares/http-exception.filter
 import { GmailSmtpService } from '@/gmail-smtp/gmail-smtp.service';
 import { EmailProcessor } from '@/email/email.processor';
 import { EmailOutboxDispatcherService } from '@/email/email-outbox-dispatcher.service';
+import { registerGraphqlEnums } from '@/commons/grapgql/registered-enums';
+
+registerGraphqlEnums();
 
 export async function createE2eApp(
   metadata?: ModuleMetadata,

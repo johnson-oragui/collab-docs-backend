@@ -14,7 +14,7 @@ import {
   OrganisationMembershipStatusEnum,
   type TOrganisationMembershipStatusEnum,
 } from '../database/database.enums';
-import { OrganisationMembershipSuspensionHistoryEntity } from '../org_membership_suspension_histories/entity';
+import { OrganisationMembershipSuspensionHistoryEntity } from '../org_membership_suspension_histories/org_membership_suspension_histories.entity';
 import { MembershipPermissionEntity } from '@/membership_permissions/membership_permissions.entity';
 
 @Entity('collabdocs_organisation_memberships')

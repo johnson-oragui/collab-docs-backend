@@ -5,7 +5,7 @@ import { OrganisationEntity } from '@/organisations/organisations.entity';
 import { RoleEntity } from '@/roles/roles.entity';
 import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
 import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/org_membership_invitation.entity';
-import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/entity';
+import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/org_membership_suspension_histories.entity';
 
 import { createOrganisationMembershipFixture } from '@/test/fixtures/organisation-membership.fixture';
 import { createTestingModule } from '@/test/fixtures/create-testing-module';
@@ -63,10 +63,10 @@ describe('Organisation Memberships Entities Integration Tests', () => {
       memberIds.length = 0;
     }
 
-    if (roleIds.length) {
-      await roleRepository.delete({ id: In([...roleIds]) });
-      roleIds.length = 0;
-    }
+    // if (roleIds.length) {
+    //   await roleRepository.delete({ id: In([...roleIds]) });
+    //   roleIds.length = 0;
+    // }
 
     if (organisationIds.length) {
       await organisationRepository.delete({ id: In([...organisationIds]) });
@@ -96,9 +96,10 @@ describe('Organisation Memberships Entities Integration Tests', () => {
           reason: 'Violation of terms',
           suspendedTill,
           membership,
+          action: 'SUSPENDED',
         }),
       );
-      historyIds.push(history.id)
+      historyIds.push(history.id);
 
       const foundHistory = await historyRepository.findOne({
         where: { id: history.id },

@@ -60,10 +60,10 @@ describe('OrganisationsService - Ownership Transfer Rollback', () => {
       userIds.length = 0;
     }
 
-    if (roleIds.length) {
-      await roleRepository.delete({ id: In([...roleIds]) });
-      roleIds.length = 0;
-    }
+    // if (roleIds.length) {
+    //   await roleRepository.delete({ id: In([...roleIds]) });
+    //   roleIds.length = 0;
+    // }
   });
 
   afterAll(async () => {

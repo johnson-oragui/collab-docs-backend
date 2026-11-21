@@ -57,22 +57,34 @@ export class PermissionGuard implements CanActivate {
       );
     }
 
-    const membership: OrganisationMembershipEntity | null =
-      request.membership ??
-      (await this.membershipRepository.findOne({
-        where: {
-          user: { id: userId, isDeleted: false },
-          organisation: { id: organisationId, isDeleted: false },
-          status: OrganisationMembershipStatusEnum.ACTIVE,
-          isDeleted: false,
-        },
-        relations: {
-          permissions: { permission: true },
-          role: true,
-        },
-      }));
+    const membership: OrganisationMembershipEntity | null = request.membership
+      ? request.membership
+      : await this.membershipRepository.findOne({
+          where: {
+            user: { id: userId, isDeleted: false },
+            organisation: { id: organisationId, isDeleted: false },
+            isDeleted: false,
+          },
+          relations: {
+            permissions: { permission: true },
+            role: true,
+          },
+          select: {
+            role: { id: true, name: true },
+            permissions: { id: true, permission: { id: true, name: true } },
+            status: true,
+            id: true,
+            suspendedTill: true,
+          },
+        });
 
     if (!membership) {
+      throw new ForbiddenException(
+        'You do not have a membership in this organisation',
+      );
+    }
+    // console.log(JSON.stringify(membership))
+    if (membership.status !== OrganisationMembershipStatusEnum.ACTIVE) {
       throw new ForbiddenException(
         'You do not have an active membership in this organisation',
       );
