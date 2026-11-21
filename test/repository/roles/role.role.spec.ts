@@ -22,12 +22,12 @@ describe('Roles Entities Integration Tests', () => {
     roleRepository = dataSource.getRepository(RoleEntity);
   });
 
-  afterEach(async () => {
-    if (roleIds.length) {
-      await roleRepository.delete({ id: In([...roleIds]) });
-      roleIds.length = 0;
-    }
-  });
+  // afterEach(async () => {
+  //   if (roleIds.length) {
+  //     await roleRepository.delete({ id: In([...roleIds]) });
+  //     roleIds.length = 0;
+  //   }
+  // });
 
   afterAll(async () => {
     await dataSource.destroy();

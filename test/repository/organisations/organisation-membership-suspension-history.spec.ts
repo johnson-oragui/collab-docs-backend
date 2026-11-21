@@ -63,10 +63,10 @@ describe('Organisation Memberships Entities Integration Tests', () => {
       memberIds.length = 0;
     }
 
-    if (roleIds.length) {
-      await roleRepository.delete({ id: In([...roleIds]) });
-      roleIds.length = 0;
-    }
+    // if (roleIds.length) {
+    //   await roleRepository.delete({ id: In([...roleIds]) });
+    //   roleIds.length = 0;
+    // }
 
     if (organisationIds.length) {
       await organisationRepository.delete({ id: In([...organisationIds]) });
@@ -96,9 +96,10 @@ describe('Organisation Memberships Entities Integration Tests', () => {
           reason: 'Violation of terms',
           suspendedTill,
           membership,
+          action: 'SUSPENDED',
         }),
       );
-      historyIds.push(history.id)
+      historyIds.push(history.id);
 
       const foundHistory = await historyRepository.findOne({
         where: { id: history.id },

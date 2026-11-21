@@ -68,10 +68,10 @@ describe('Organisation Relationships Integration Test', () => {
       memberIds.length = 0;
     }
 
-    if (roleIds.length) {
-      await roleRepository.delete({ id: In([...roleIds]) });
-      roleIds.length = 0;
-    }
+    // if (roleIds.length) {
+    //   await roleRepository.delete({ id: In([...roleIds]) });
+    //   roleIds.length = 0;
+    // }
 
     if (organisationIds.length) {
       await orgRepository.delete({ id: In([...organisationIds]) });
@@ -148,6 +148,8 @@ describe('Organisation Relationships Integration Test', () => {
       reason: 'Violation of terms',
       membership,
       suspendedTill: new Date(Date.now() + 7 * 86400000),
+      action: 'SUSPENDED',
+      actor: user,
     });
     await historyRepo.save(history);
 
