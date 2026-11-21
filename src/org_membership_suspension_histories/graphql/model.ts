@@ -4,7 +4,7 @@ import {
   TOrganisationMembershipStatusEnum,
 } from '@/database/database.enums';
 import { GQLUserModel } from '@/user/graphql/user.model';
-import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Field, ID, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('GQLMembershipSuspensionHistories')
 export class GQLMembershipSuspensionHistories {
@@ -32,13 +32,3 @@ export class GQLMembershipSuspensionHistories {
   @Field(() => GQLUserModel, { nullable: true })
   actor?: GQLUserModel | null;
 }
-
-registerEnumType(ActionEnum, {
-  name: 'SuspensionHistoryActionEnum',
-  description: 'Action taken on a membership suspension history record.',
-});
-
-registerEnumType(OrganisationMembershipStatusEnum, {
-  name: 'OrganisationMembershipStatusEnum',
-  description: 'Status of an organisation membership.',
-});

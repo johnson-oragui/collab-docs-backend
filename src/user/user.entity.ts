@@ -5,6 +5,7 @@ import { OrganisationMembershipEntity } from '../organisation-memberships/organi
 import { OrganisationApiKeyEntity } from '@/organisation-api-key/organisation-api-key.entity';
 import { UserSessionEntity } from '@/user_sessions/user-session.entity';
 import { OrganisationMembershipInvitationEntity } from '@/org_membership_invitation/org_membership_invitation.entity';
+import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/org_membership_suspension_histories.entity';
 
 @Entity('collabdocs_users')
 export class UserEntity extends CustomBaseEntity {
@@ -66,4 +67,11 @@ export class UserEntity extends CustomBaseEntity {
     { cascade: false },
   )
   declare revokedInvitations: OrganisationMembershipInvitationEntity[];
+
+  @OneToMany(
+    () => OrganisationMembershipSuspensionHistoryEntity,
+    (memberSuspensionActions) => memberSuspensionActions.actor,
+    { cascade: false },
+  )
+  declare memberSuspensionActions: OrganisationMembershipSuspensionHistoryEntity[];
 }

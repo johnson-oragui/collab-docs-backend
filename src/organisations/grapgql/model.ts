@@ -2,7 +2,7 @@ import {
   OrganisationStatusEnum,
   TOrganisationStatusEnum,
 } from '@/database/database.enums';
-import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Field, ID, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('GQLOrganisationModel')
 export class GQLOrganisationModel {
@@ -27,8 +27,3 @@ export class GQLOrganisationModel {
   @Field(() => Date, { nullable: true })
   createdAt?: Date | null;
 }
-
-registerEnumType(OrganisationStatusEnum, {
-  name: 'OrganisationStatusEnum',
-  description: 'Status of an organisation membership.',
-});
