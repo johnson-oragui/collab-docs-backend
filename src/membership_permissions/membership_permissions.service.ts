@@ -35,6 +35,62 @@ export class MembershipPermissionsService {
     private readonly membershipRepo: Repository<OrganisationMembershipEntity>,
   ) {}
 
+  async getMembershipPermissions(request: ExRequest, membershipId: string) {
+    try {
+      const organisationId =
+        request.organisation?.id ?? request.decodedUser?.organisationId;
+
+      if (!organisationId) {
+        throw new HttpException(
+          { message: 'Organisation context is required' },
+          400,
+        );
+      }
+
+      const membership = await this.membershipRepo.findOne({
+        where: { id: membershipId, organisation: { id: organisationId } },
+        select: { id: true, isDeleted: true },
+      });
+      if (!membership || membership.isDeleted) {
+        throw new HttpException(
+          {
+            message: 'No Membership exists for the selected User.',
+            success: false,
+          },
+          404,
+        );
+      }
+      const membershipWithPermissions =
+        await this.membershipPermissionRepo.find({
+          where: { membership: { id: membershipId } },
+          select: { id: true, permission: { name: true } },
+          relations: { permission: true },
+        });
+      const permissions = membershipWithPermissions
+        .filter((p) => !!p.permission)
+        .map((p) => p.permission);
+
+      if (permissions.length === 0 || membershipWithPermissions.length === 0) {
+        return {
+          message: 'Permissions retrieved successfully',
+          success: true,
+          data: {},
+        };
+      }
+      const nestedPermisions = groupPermissionsToNested(permissions);
+      return new ApiResponseDto({
+        message: 'Permissions retrieved successfully',
+        success: true,
+        data: nestedPermisions,
+      });
+    } catch (error) {
+      return handleServiceMethodError(
+        error,
+        'Failed to retrieve Membership Permissions',
+      );
+    }
+  }
+
   async addPermissions(
     membershipId: string,
     dto: UpdateMembershipPermissionsDto,
