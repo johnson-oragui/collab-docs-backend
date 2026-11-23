@@ -34,8 +34,3 @@ export class GQLOrganisationMembershipModel {
   @Field(() => GQLRoleModel, { nullable: true })
   role?: GQLRoleModel | null;
 }
-
-registerEnumType(OrganisationMembershipStatusEnum, {
-  name: 'OrganisationMembershipStatusEnum',
-  description: 'Status of an organisation membership.',
-});
