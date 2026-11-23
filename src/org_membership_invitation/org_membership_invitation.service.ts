@@ -199,6 +199,8 @@ export class OrganisationmembershipinvitationService {
     const requestId = asyncStore.getStore()?.requestId;
     const email = dto.email?.toLowerCase().trim();
     try {
+      // TODO: Consider using the role_permission for a role if when the permissionMode is default
+      // instead of copying into member-permission table
       const organisationRole =
         request.decodedUser?.organisationRole ?? request.membership?.role?.name;
       if (
