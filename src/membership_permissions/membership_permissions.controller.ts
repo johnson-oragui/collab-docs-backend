@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   Param,
   ParseUUIDPipe,
@@ -9,7 +10,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { MembershipPermissionsService } from './membership_permissions.service';
 import { CustomJwtAuthGuard } from '@/commons/guards/jwt.auth.guard';
 import { PermissionGuard } from '@/commons/guards/permission.guard';
@@ -25,6 +26,47 @@ export class MembershipPermissionsController {
   constructor(
     private readonly membershipPermissionsService: MembershipPermissionsService,
   ) {}
+
+  @Get(':membershipId')
+  @ApiOkResponse({
+    example: {
+      message: 'Permissions retrieved successfully',
+      success: true,
+      data: {
+        document: {
+          create: true,
+          read: true,
+          update: true,
+          delete: true,
+        },
+        documentComment: {
+          create: true,
+          read: true,
+          update: true,
+          delete: true,
+        },
+        documentInvitation: {
+          create: true,
+          read: true,
+          update: true,
+          delete: true,
+        },
+      },
+    },
+  })
+  @UseGuards(CustomJwtAuthGuard, PermissionGuard)
+  @RequireAnyPermission(PermissionEnum.ORGANISATION_MEMBERSHIP_PERMISSION.READ)
+  @HttpCode(200)
+  async getMembershipPermissions(
+    @Req() req: ExRequest,
+    @Param('membershipId', new ParseUUIDPipe({ version: '7' }))
+    membershipId: string,
+  ) {
+    return await this.membershipPermissionsService.getMembershipPermissions(
+      req,
+      membershipId,
+    );
+  }
 
   @Post(':membershipId/permissions')
   @HttpCode(201)
