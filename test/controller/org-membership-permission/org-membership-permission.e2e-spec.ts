@@ -298,7 +298,7 @@ describe('Membership-Permissions (e2e)', () => {
 
     it('should return 401 when removing permissions without authorization token', async () => {
       const res = await http
-        .delete(`organisation-memberships/${targetMembershipId}/permissions`)
+        .patch(`organisation-memberships/${targetMembershipId}/permissions`)
         .send({ permissions: { document: { read: true } } });
 
       expect(res.statusCode).toBe(401);
