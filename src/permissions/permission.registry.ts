@@ -41,6 +41,12 @@ export const PermissionEnum = {
     UPDATE: 'organisation_membership:update',
     READ: 'organisation_membership:read',
   },
+  ORGANISATION_MEMBERSHIP_PERMISSION: {
+    CREATE: 'organisation_membership_permission:create',
+    DELETE: 'organisation_membership_permission:delete',
+    UPDATE: 'organisation_membership_permission:update',
+    READ: 'organisation_membership_permission:read',
+  },
   ORGANISATION_CHAT: {
     CREATE: 'organisation_chat:create',
     DELETE: 'organisation_chat:delete',
@@ -133,6 +139,12 @@ export const DEFAULT_ORG_ADMIN_PERMISSION_ENUM = {
     DELETE: 'organisation_membership:delete',
     UPDATE: 'organisation_membership:update',
     READ: 'organisation_membership:read',
+  },
+  ORGANISATION_MEMBERSHIP_PERMISSION: {
+    CREATE: 'organisation_membership_permission:create',
+    DELETE: 'organisation_membership_permission:delete',
+    UPDATE: 'organisation_membership_permission:update',
+    READ: 'organisation_membership_permission:read',
   },
   ORGANISATION_ADMIN: {
     READ: 'organisation_admin:read',
