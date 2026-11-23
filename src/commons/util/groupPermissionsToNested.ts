@@ -1,6 +1,7 @@
 import { InvitePermissionsDto } from '@/permissions/dto/invitation-permissions.dto';
 import { PermissionEnum } from '@/permissions/permission.registry';
 import { PermissionEntity } from '@/permissions/permissions.entity';
+import { snakeCaseToCamelcase } from './snakeCaseToCamelcase';
 
 /**
  * Transforms an array of PermissionEntity objects into a nested
@@ -59,11 +60,11 @@ export function nestedPermissionsToPermissionNames(
     const categoryActions = PermissionEnum[categoryKey];
 
     // Replicate the exact camelCase formatting used in groupPermissionsToNested
-    const formattedCategoryKey = categoryKey
-      .toLowerCase()
-      .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    // const formattedCategoryKey = categoryKey
+    //   .toLowerCase()
+    //   .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 
-    const userCategoryState = permissions[formattedCategoryKey];
+    const userCategoryState = permissions[snakeCaseToCamelcase(categoryKey)];
     if (!userCategoryState) continue;
 
     for (const actionKey of Object.keys(
@@ -81,3 +82,23 @@ export function nestedPermissionsToPermissionNames(
 
   return Array.from(activePermissionNames);
 }
+
+export const extractExplicitFalsePermissionNames = (
+  permissions: InvitePermissionsDto | Record<string, Record<string, boolean>>,
+): string[] => {
+  if (!permissions) return [];
+
+  const falseNames: string[] = [];
+  for (const [categoryKey, actions] of Object.entries(permissions)) {
+    if (!actions || typeof actions !== 'object') continue;
+    // Convert camelCase category (e.g. documentComment -> document_comment)
+    const snakeCategory = categoryKey.replace(/([A-Z])/g, '_$1').toLowerCase();
+
+    for (const [actionKey, flag] of Object.entries(actions)) {
+      if (flag === false) {
+        falseNames.push(`${snakeCategory}:${actionKey.toLowerCase()}`);
+      }
+    }
+  }
+  return falseNames;
+};
