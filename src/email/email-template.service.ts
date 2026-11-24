@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { IEmailPayload, IEmailTemplateOptions } from './email.interface';
+import {
+  IEmailInfoTemplateOptions,
+  IEmailPayload,
+  IEmailTemplateOptions,
+} from './email.interface';
 
 @Injectable()
 export class EmailTemplateService {
@@ -288,7 +292,40 @@ export class EmailTemplateService {
 
     return {
       to: options.recipientEmail,
-      subject: 'Reset your Collab Docs password',
+      subject: 'Organisation Invitation',
+      html,
+      text,
+    };
+  }
+
+  sendOrganisationInfoEmail(options: IEmailInfoTemplateOptions): IEmailPayload {
+    const greeting = this.getGreeting(options.recipientName);
+
+    const html = this.getLayout(`
+      <p>${greeting}</p>
+
+      <p>
+        We have some information from your ${options.organisationName ?? ''} Organisation.
+      </p>
+
+      <p>
+        ${options.info}
+      </p>
+    `);
+
+    const text = [
+      greeting,
+      '',
+      `We have some information from your ${options.organisationName ?? ''} Organisation.`,
+      '',
+      `${options.info}`,
+      '',
+      '',
+    ].join('\n');
+
+    return {
+      to: options.recipientEmail,
+      subject: 'Organisation Update',
       html,
       text,
     };
