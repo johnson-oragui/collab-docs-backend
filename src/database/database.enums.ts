@@ -68,6 +68,7 @@ export const EmailEventTypeEnum = Object.freeze({
   PASSWORD_RESET: 'PASSWORD_RESET',
   EMAIL_VERIFICATION: 'EMAIL_VERIFICATION',
   ORGANISATION_INVITATION: 'ORGANISATION_INVITATION',
+  INFO: 'INFO',
 } as const);
 
 export type TEmailEventTypeEnum =
