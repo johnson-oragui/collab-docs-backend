@@ -23,7 +23,7 @@ import { OrganisationMembershipEntity } from '@/organisation-memberships/organis
     OrganisationApiKeyModule,
   ],
   providers: [RolesSeedService, PermissionsSeedService, RoleService],
-  exports: [RolesSeedService],
+  exports: [RolesSeedService, TypeOrmModule],
   controllers: [RoleController],
 })
 export class RolesModule {}
