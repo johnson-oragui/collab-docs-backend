@@ -33,6 +33,7 @@ import { AppGraphQLModule } from './graphql/graphql.module';
 import { MembershipPermissionModule } from './membership_permissions/membership_permissions.module';
 import { OrganisationAuditModule } from './organisation_audit/organisation_audit.module';
 import { registerGraphqlEnums } from './commons/grapgql/registered-enums';
+import { OrganisationMembershipRoleModule } from './org-membership-role/org-membership-role.modul';
 
 registerGraphqlEnums();
 
@@ -63,6 +64,7 @@ registerGraphqlEnums();
     EmailVerificationModule,
     MembershipPermissionModule,
     OrganisationAuditModule,
+    OrganisationMembershipRoleModule,
   ],
   controllers: [AppController],
   providers: [
