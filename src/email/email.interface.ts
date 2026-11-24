@@ -21,3 +21,12 @@ export interface IEmailTemplateOptions {
   actionUrl: string;
   expiresIn: string;
 }
+
+export interface IEmailInfoTemplateOptions {
+  recipientEmail: string;
+  recipientName?: string;
+  organisationName: string;
+  actionUrl?: string;
+  expiresIn?: string;
+  info: string;
+}
