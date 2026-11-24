@@ -406,6 +406,7 @@ export class AuthService {
         id: user.id,
         organisationId: selectedMembership.organisation.id,
         organisationRole: selectedMembership.role.name,
+        organisationmembershipId: selectedMembership.id,
         sid: session.sessionId,
         jti: uuidv7(),
       });
@@ -526,6 +527,7 @@ export class AuthService {
         id: user.id,
         organisationId: organisation.id,
         organisationRole: membership.role.name,
+        organisationmembershipId: membership.id,
         sid: session.id,
         jti: uuidv7(),
       });
