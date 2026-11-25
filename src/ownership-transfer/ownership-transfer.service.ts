@@ -308,23 +308,63 @@ export class OwnershipTransferService {
     }
   }
 
-  //   async getOwnership(request: ExRequest) {
-  //     try {
-  //     } catch (error) {
-  //       return handleServiceMethodError(error, 'Failed to retrieve ownership');
-  //     }
-  //   }
+  async getOwnership(request: ExRequest) {
+  try {
+      const organisationId =
+        request.organisation?.id ?? request.decodedUser?.organisationId;
 
-  //   async getOwnershipHistory(
-  //     request: ExRequest,
-  //     query: GetOwnershipHistoryQuery,
-  //   ) {
-  //     try {
-  //     } catch (error) {
-  //       return handleServiceMethodError(
-  //         error,
-  //         'Failed to retrieve ownership history',
-  //       );
-  //     }
-  //   }
+      if (!organisationId) {
+        throw new HttpException(
+          { message: 'Organisation context is required' },
+          400,
+        );
+      }
+
+      const organisation = await this.dataSource
+        .getRepository(OrganisationEntity)
+        .findOne({
+          where: { id: organisationId },
+          relations: {
+            owner: true,
+            creator: true,
+          },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            status: true,
+            owner: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+            creator: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        });
+
+      if (!organisation || organisation.isDeleted) {
+        throw new HttpException({ message: 'Organisation not found' }, 404);
+      }
+
+      return new ApiResponseDto({
+        message: 'Organisation ownership retrieved successfully',
+        success: true,
+        data: {
+          organisationId: organisation.id,
+          organisationName: organisation.name,
+          status: organisation.status,
+          owner: organisation.owner ?? null,
+          creator: organisation.creator ?? null,
+        },
+      });
+    } catch (error) {
+return handleServiceMethodError(error, 'Failed to retrieve ownership');
+  }
+}
 }
