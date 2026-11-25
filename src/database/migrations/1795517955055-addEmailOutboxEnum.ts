@@ -5,10 +5,10 @@ export class AddEmailOutboxEnum1795517955055 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TYPE "public"."collabdocs_email_outbox_event_type_enum" ADD VALUE 'INFO'`,
+      `ALTER TYPE "public"."collabdocs_email_outbox_event_type_enum" ADD VALUE IF NOT EXISTS 'INFO'`,
     );
     await queryRunner.query(
-      `ALTER TYPE "public"."collabdocs_password_reset_tokens_purpose_enum" ADD VALUE 'INFO'`,
+      `ALTER TYPE "public"."collabdocs_password_reset_tokens_purpose_enum" ADD VALUE IF NOT EXISTS 'INFO'`,
     );
   }
 

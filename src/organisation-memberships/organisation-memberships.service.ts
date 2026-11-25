@@ -13,6 +13,7 @@ import { asyncStore } from '@/commons/storage/async-storage';
 import { handleServiceMethodError } from '@/commons/util/errorHandler';
 import { ApiResponseDto } from '@/commons/dtos/api-response.dto';
 import {
+  EmailEventTypeEnum,
   OrganisationMembershipStatusEnum,
   OrganisationStatusEnum,
   RoleEnum,
@@ -30,6 +31,9 @@ import {
   type OrganisationMembershipsResponseType,
 } from './graphql/dto/get-organisation-memberships.input';
 import { PaginationMetaDto } from '@/commons/dtos/pagination-meta.dto';
+import { MembershipPermissionEntity } from '@/membership_permissions/membership_permissions.entity';
+import { EmailTemplateService } from '@/email/email-template.service';
+import { EmailOutboxService } from '@/email-outbox/email-outbox.service';
 
 @Injectable()
 export class OrganisationMembershipService {
@@ -39,6 +43,9 @@ export class OrganisationMembershipService {
 
     @InjectRepository(OrganisationMembershipEntity)
     private readonly membershipRepo: Repository<OrganisationMembershipEntity>,
+
+    private readonly emailTemplateService: EmailTemplateService,
+    private readonly emailOutboxService: EmailOutboxService,
   ) {}
 
   async getMemberships(
@@ -146,6 +153,167 @@ export class OrganisationMembershipService {
     }
   }
 
+  async removeMembership(
+    membershipId: string,
+    dto: UnsuspendOrganisationMemberDto,
+    request: ExRequest,
+  ) {
+    const requestId = asyncStore.getStore()?.requestId ?? null;
+    try {
+      const organisationId =
+        request.organisation?.id ?? request.decodedUser?.organisationId;
+
+      if (!organisationId) {
+        throw new HttpException(
+          { message: 'Organisation context is required' },
+          400,
+        );
+      }
+
+      const actorUserId = request.user?.id ?? request.decodedUser?.id;
+      const actorRole =
+        request.decodedUser?.organisationRole ?? request.membership?.role?.name;
+
+      await this.dataSource.transaction(async (entityManager) => {
+        const membershipRepo = entityManager.getRepository(
+          OrganisationMembershipEntity,
+        );
+        const membershiPermissionRepo = entityManager.getRepository(
+          MembershipPermissionEntity,
+        );
+        const auditRepo = entityManager.getRepository(OrganisationAuditEntity);
+
+        const membership = await membershipRepo.findOne({
+          where: {
+            id: membershipId,
+            organisation: { id: organisationId },
+            isDeleted: false,
+          },
+          relations: {
+            user: true,
+            role: true,
+            organisation: { owner: true },
+          },
+        });
+
+        if (!membership) {
+          throw new HttpException(
+            { message: 'Organisation membership not found' },
+            404,
+          );
+        }
+
+        if (actorUserId && membership.user?.id === actorUserId) {
+          throw new HttpException(
+            { message: 'You cannot remove your own membership' },
+            400,
+          );
+        }
+
+        // Prevent suspending Organisation Owners
+        if (membership?.user?.id === membership?.organisation?.owner?.id) {
+          throw new HttpException(
+            {
+              message: 'This action is Invalid!. Cannot remove this member.',
+            },
+            403,
+          );
+        }
+
+        if (
+          membership.role?.name === RoleEnum.ORG_ADMIN &&
+          actorRole !== RoleEnum.ORG_ADMIN
+        ) {
+          throw new HttpException(
+            {
+              message:
+                'Only an Organisation Admin can remove another Organisation Admin',
+            },
+            403,
+          );
+        }
+
+        // Prevent removing the last active Organisation Admin
+        if (membership.role?.name === RoleEnum.ORG_ADMIN) {
+          const activeAdminCount = await membershipRepo.count({
+            where: {
+              organisation: { id: organisationId },
+              role: { name: RoleEnum.ORG_ADMIN },
+              status: OrganisationMembershipStatusEnum.ACTIVE,
+              isDeleted: false,
+            },
+          });
+
+          if (activeAdminCount <= 1) {
+            throw new HttpException(
+              {
+                message:
+                  'Cannot remove the only active Organisation Admin in the organisation',
+              },
+              400,
+            );
+          }
+        }
+
+        await auditRepo.save(
+          auditRepo.create({
+            actor: request.user ?? null,
+            eventType: OrganisationAuditEventEnum.MEMBER_REMOVAL,
+            organisation: membership.organisation ?? { id: organisationId },
+            metadata: {
+              membershipStatus: membership.status,
+              targetUserId: membership.user?.id,
+              targetEmail: membership.user?.email,
+              targetFirstName: membership.user?.firstName,
+              targetLastName: membership.user?.lastName,
+              role: membership.role?.name,
+              removedAt: new Date(),
+              reason: dto.reason?.trim() ?? null,
+              requestId,
+            },
+          }),
+        );
+
+        await membershiPermissionRepo
+          .createQueryBuilder()
+          .delete()
+          .from(MembershipPermissionEntity)
+          .where('membership_id = :membershipId', { membershipId })
+          .execute();
+
+        await membershipRepo
+          .createQueryBuilder()
+          .delete()
+          .from(OrganisationMembershipEntity)
+          .where('id = :membershipId', { membershipId })
+          .execute();
+
+        const emailPayload =
+          this.emailTemplateService.sendOrganisationInfoEmail({
+            recipientEmail: membership.user.email,
+            recipientName: membership.user.firstName,
+            organisationName: membership.organisation.name,
+            info: `Your have been removed from Organisation ${membership.organisation.name}`,
+          });
+
+        await this.emailOutboxService.create(
+          entityManager,
+          EmailEventTypeEnum.INFO,
+          emailPayload,
+        );
+      });
+      return new ApiResponseDto<{ membershipId: string }>({
+        data: {
+          membershipId,
+        },
+        message: 'Organisation member removed successfully',
+        success: true,
+      });
+    } catch (error) {
+      return handleServiceMethodError(error, 'Failed to remove Membership');
+    }
+  }
+
   async suspendMember(
     membershipId: string,
     dto: SuspendOrganisationMemberDto,
@@ -204,10 +372,7 @@ export class OrganisationMembershipService {
         }
 
         // Prevent suspending Organisation Owners
-        if (
-          membership.role?.name === RoleEnum.ORG_ADMIN &&
-          membership?.user?.id === membership?.organisation?.owner?.id
-        ) {
+        if (membership?.user?.id === membership?.organisation?.owner?.id) {
           throw new HttpException(
             {
               message: 'This action is Invalid!. Cannot suspend this member.',

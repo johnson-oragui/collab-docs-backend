@@ -9,6 +9,7 @@ import { PermissionGuard } from '@/commons/guards/permission.guard';
 import { OrganisationMembershipService } from './organisation-memberships.service';
 import { OrganisationMembershipController } from './organisation-memberships.controller';
 import { OrganisationMembershipResolver } from './graphql/resolver';
+import { EmailOutboxModule } from '@/email-outbox/email-outbox.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { OrganisationMembershipResolver } from './graphql/resolver';
       OrganisationMembershipSuspensionHistoryEntity,
       OrganisationMembershipInvitationEntity,
     ]),
+    EmailOutboxModule,
   ],
   providers: [
     PermissionGuard,

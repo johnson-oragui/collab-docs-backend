@@ -30,19 +30,16 @@ export class OrganisationMembershipSuspensionHistoryEntity extends CustomBaseEnt
     () => OrganisationMembershipEntity,
     (membership) => membership.suspensionHistories,
     {
-      onDelete: 'RESTRICT',
+      onDelete: 'SET NULL',
+      nullable: true,
     },
   )
   @JoinColumn({ name: 'organisation_membership_id' })
-  declare membership: OrganisationMembershipEntity;
+  declare membership: OrganisationMembershipEntity | null;
 
-  @ManyToOne(
-    () => UserEntity,
-    (actor) => actor.memberSuspensionActions,
-    {
-      onDelete: 'RESTRICT',
-    },
-  )
+  @ManyToOne(() => UserEntity, (actor) => actor.memberSuspensionActions, {
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({ name: 'actor_id' })
   declare actor: UserEntity;
 }

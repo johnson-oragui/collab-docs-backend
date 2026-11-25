@@ -1,5 +1,5 @@
 import { handleServiceMethodError } from '@/commons/util/errorHandler';
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { type Request as ExRequest } from 'express';
@@ -23,14 +23,23 @@ import { OrganisationAuditEntity } from '@/organisation_audit/organisation_audit
 import { asyncStore } from '@/commons/storage/async-storage';
 import { EmailTemplateService } from '@/email/email-template.service';
 import { EmailOutboxService } from '@/email-outbox/email-outbox.service';
+import { RedisService } from '@/redis/redis.service';
+import { RedisClientType } from 'redis';
+import { invalidateMemberPermissionCache } from '@/commons/util/invalidatePermissionCacheKey';
 
 @Injectable()
 export class OrganisationMembershipRoleService {
+  logger: Logger;
+  redisClient: RedisClientType;
   constructor(
     @InjectDataSource() readonly dataSource: DataSource,
     private readonly emailTemplateService: EmailTemplateService,
     private readonly emailOutboxService: EmailOutboxService,
-  ) {}
+    private readonly redisService: RedisService,
+  ) {
+    this.redisClient = this.redisService.getClient();
+    this.logger = new Logger(OrganisationMembershipRoleService.name);
+  }
 
   async reassignRole(
     request: ExRequest,
@@ -39,8 +48,6 @@ export class OrganisationMembershipRoleService {
   ) {
     const requestId = asyncStore.getStore()?.requestId;
     try {
-      // TODO: discard cached logged member permissionson redis after reassignment...
-      // after when this feature has been added
       const organisationId =
         request.organisation?.id ?? request.decodedUser?.organisationId;
       let organisationRole = request.decodedUser?.organisationRole;
@@ -197,6 +204,12 @@ export class OrganisationMembershipRoleService {
               requestId,
             },
           }),
+        );
+        await invalidateMemberPermissionCache(
+          this.redisClient,
+          organisationId!,
+          membershipExists.id,
+          membershipExists.user.id,
         );
         const emailPayload =
           this.emailTemplateService.sendOrganisationInfoEmail({

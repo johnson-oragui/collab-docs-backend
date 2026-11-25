@@ -34,6 +34,7 @@ import { MembershipPermissionModule } from './membership_permissions/membership_
 import { OrganisationAuditModule } from './organisation_audit/organisation_audit.module';
 import { registerGraphqlEnums } from './commons/grapgql/registered-enums';
 import { OrganisationMembershipRoleModule } from './org-membership-role/org-membership-role.modul';
+import { OwnershipTransferModule } from './ownership-transfer/ownership-transfer.module';
 
 registerGraphqlEnums();
 
@@ -65,6 +66,7 @@ registerGraphqlEnums();
     MembershipPermissionModule,
     OrganisationAuditModule,
     OrganisationMembershipRoleModule,
+    OwnershipTransferModule,
   ],
   controllers: [AppController],
   providers: [

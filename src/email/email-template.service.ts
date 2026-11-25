@@ -299,9 +299,10 @@ export class EmailTemplateService {
   }
 
   sendOrganisationInfoEmail(options: IEmailInfoTemplateOptions): IEmailPayload {
-    const greeting = this.getGreeting(options.recipientName);
+    try {
+      const greeting = this.getGreeting(options.recipientName);
 
-    const html = this.getLayout(`
+      const html = this.getLayout(`
       <p>${greeting}</p>
 
       <p>
@@ -313,21 +314,25 @@ export class EmailTemplateService {
       </p>
     `);
 
-    const text = [
-      greeting,
-      '',
-      `We have some information from your ${options.organisationName ?? ''} Organisation.`,
-      '',
-      `${options.info}`,
-      '',
-      '',
-    ].join('\n');
+      const text = [
+        greeting,
+        '',
+        `We have some information from your ${options.organisationName ?? ''} Organisation.`,
+        '',
+        `${options.info}`,
+        '',
+        '',
+      ].join('\n');
 
-    return {
-      to: options.recipientEmail,
-      subject: 'Organisation Update',
-      html,
-      text,
-    };
+      return {
+        to: options.recipientEmail,
+        subject: 'Organisation Update',
+        html,
+        text,
+      };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 }
