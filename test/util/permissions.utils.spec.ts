@@ -148,6 +148,10 @@ describe('PermissionsUtils', () => {
           update: true,
           delete: true,
         },
+        organisationOwnershipTransfer: {
+          create: true,
+          read: true,
+        },
         organisationMembershipPermission: {
           create: true,
           read: true,

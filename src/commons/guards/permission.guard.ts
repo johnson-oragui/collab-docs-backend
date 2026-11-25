@@ -19,15 +19,29 @@ import {
 import { OrganisationMembershipEntity } from '@/organisation-memberships/organisation-memberships.entity';
 import { TPermissionEnum } from '@/permissions/permission.registry';
 import { OrganisationMembershipStatusEnum } from '@/database/database.enums';
+import { RedisService } from '@/redis/redis.service';
+import { RedisClientType } from 'redis';
+import { buildPermissionCacheKey } from '../util/buildPermissionCacheKey';
+import { durationToRedisExSeconds } from '../util/durationToRedisExSeconds';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
+  redisClient: RedisClientType;
+  jwtExpiresIn: string;
   constructor(
     private readonly reflector: Reflector,
 
     @InjectRepository(OrganisationMembershipEntity)
     private readonly membershipRepository: Repository<OrganisationMembershipEntity>,
-  ) {}
+
+    private readonly redisService: RedisService,
+
+    private readonly configService: ConfigService,
+  ) {
+    this.redisClient = this.redisService.getClient();
+    this.jwtExpiresIn = this.configService.getOrThrow<string>('JWT_EXPIRY');
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requirement =
@@ -57,31 +71,50 @@ export class PermissionGuard implements CanActivate {
       );
     }
 
-    const membership: OrganisationMembershipEntity | null = request.membership
-      ? request.membership
-      : await this.membershipRepository.findOne({
-          where: {
-            user: { id: userId, isDeleted: false },
-            organisation: { id: organisationId, isDeleted: false },
-            isDeleted: false,
-          },
-          relations: {
-            permissions: { permission: true },
-            role: true,
-          },
-          select: {
-            role: { id: true, name: true },
-            permissions: { id: true, permission: { id: true, name: true } },
-            status: true,
-            id: true,
-            suspendedTill: true,
-          },
-        });
+    const key = buildPermissionCacheKey(
+      organisationId,
+      request.decodedUser?.organisationmembershipId ?? userId,
+    );
+
+    const cachedMembership = await this.redisClient.get(key);
+
+    const parsedMembership = cachedMembership
+      ? JSON.parse(cachedMembership)
+      : null;
+
+    const membership: OrganisationMembershipEntity | null = parsedMembership
+      ? parsedMembership
+      : request.membership
+        ? request.membership
+        : await this.membershipRepository.findOne({
+            where: {
+              user: { id: userId, isDeleted: false },
+              organisation: { id: organisationId, isDeleted: false },
+              isDeleted: false,
+            },
+            relations: {
+              permissions: { permission: true },
+              role: true,
+            },
+            select: {
+              role: { id: true, name: true },
+              permissions: { id: true, permission: { id: true, name: true } },
+              status: true,
+              id: true,
+              suspendedTill: true,
+            },
+          });
 
     if (!membership) {
       throw new ForbiddenException(
         'You do not have a membership in this organisation',
       );
+    }
+    if (!cachedMembership) {
+      const ttlSeconds = durationToRedisExSeconds(this.jwtExpiresIn);
+      await this.redisClient.set(key, JSON.stringify(membership), {
+        expiration: { type: 'EX', value: ttlSeconds },
+      });
     }
     // console.log(JSON.stringify(membership))
     if (membership.status !== OrganisationMembershipStatusEnum.ACTIVE) {
