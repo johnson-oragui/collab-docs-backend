@@ -29,6 +29,10 @@ export const PermissionEnum = {
     UPDATE: 'organisation:update',
     READ: 'organisation:read',
   },
+  ORGANISATION_OWNERSHIP_TRANSFER: {
+    CREATE: 'organisation_ownership_transfer:create',
+    READ: 'organisation_ownership_transfer:read',
+  },
   ORGANISATION_INVITATION: {
     CREATE: 'organisation_invitation:create',
     DELETE: 'organisation_invitation:delete',
@@ -127,6 +131,9 @@ export const DEFAULT_ORG_ADMIN_PERMISSION_ENUM = {
   },
   ORGANISATION: {
     READ: 'organisation:read',
+  },
+  ORGANISATION_OWNERSHIP_TRANSFER: {
+    READ: 'organisation_ownership_transfer:read',
   },
   ORGANISATION_CHAT: {
     CREATE: 'organisation_chat:create',
