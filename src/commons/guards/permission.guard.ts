@@ -116,7 +116,7 @@ export class PermissionGuard implements CanActivate {
         expiration: { type: 'EX', value: ttlSeconds },
       });
     }
-    // console.log(JSON.stringify(membership))
+    // console.log(JSON.stringify(membership));
     if (membership.status !== OrganisationMembershipStatusEnum.ACTIVE) {
       throw new ForbiddenException(
         'You do not have an active membership in this organisation',
@@ -130,11 +130,10 @@ export class PermissionGuard implements CanActivate {
     }
     request.membership = membership;
 
-    const assignedPermissions = new Set<TPermissionEnum>(
-      membership.permissions.map(
-        (permission) => permission.permission.name as TPermissionEnum,
-      ),
-    );
+    const assignedPermissions = new Set<TPermissionEnum>();
+    membership.permissions.forEach((p) => {
+      assignedPermissions.add(p.permission.name as TPermissionEnum);
+    });
 
     const hasPermission = (permission: TPermissionEnum) =>
       assignedPermissions.has(permission);
