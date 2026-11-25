@@ -1,12 +1,18 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { OwnershipTransferService } from './ownership-transfer.service';
 import { uuidv7 } from 'uuidv7';
 import { type Request as ExRequest } from 'express';
@@ -35,25 +41,29 @@ export class OwnershipTransferController {
   @ApiCreatedResponse({
     description: 'Organisation ownership transferred successfully',
     example: {
-      organisationId: uuidv7(),
-      creator: {
-        id: uuidv7(),
-        firstName: 'Johnson1',
-        lastName: 'Johnson1',
+      message: 'Organisation ownership transferred successfully',
+      success: true,
+      data: {
+        organisationId: uuidv7(),
+        creator: {
+          id: uuidv7(),
+          firstName: 'Johnson1',
+          lastName: 'Johnson1',
+        },
+        previousOwner: {
+          id: uuidv7(),
+          firstName: 'Johnson2',
+          lastName: 'Johnson2',
+        },
+        newOwner: {
+          id: uuidv7(),
+          firstName: 'Johnson3',
+          lastName: 'Johnson3',
+        },
+        previousOwnerRole: 'ORG_MEMBER',
+        newOwnerRole: 'ORG_ADMIN',
+        historyId: uuidv7(),
       },
-      previousOwner: {
-        id: uuidv7(),
-        firstName: 'Johnson2',
-        lastName: 'Johnson2',
-      },
-      newOwner: {
-        id: uuidv7(),
-        firstName: 'Johnson3',
-        lastName: 'Johnson3',
-      },
-      previousOwnerRole: 'ORG_MEMBER',
-      newOwnerRole: 'ORG_ADMIN',
-      historyId: uuidv7(),
     },
   })
   async transferOwnership(
@@ -61,5 +71,38 @@ export class OwnershipTransferController {
     @Body() dto: TransferOwnershipDto,
   ) {
     return await this.ownershipTransferService.transferOwnership(request, dto);
+  }
+
+  @Get()
+  @RequireAnyPermission(PermissionEnum.ORGANISATION_OWNERSHIP_TRANSFER.READ)
+  @UseGuards(CustomJwtAuthGuard, PermissionGuard)
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Retrieves organisation ownership.',
+  })
+  @ApiOkResponse({
+    description: 'Organisation ownership retrieved successfully',
+    example: {
+      message: 'Organisation ownership retrieved successfully',
+      success: true,
+      data: {
+        organisationId: uuidv7(),
+        creator: {
+          id: uuidv7(),
+          firstName: 'Johnson1',
+          lastName: 'Johnson1',
+        },
+        owner: {
+          id: uuidv7(),
+          firstName: 'Johnson2',
+          lastName: 'Johnson2',
+        },
+        organisationName: 'Johnson tech LTD',
+        status: 'ACTIVE',
+      },
+    },
+  })
+  async getOwnership(@Req() request: ExRequest) {
+    return await this.ownershipTransferService.getOwnership(request);
   }
 }
