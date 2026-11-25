@@ -21,6 +21,7 @@ import {
 } from './dto/member-suspension.dto';
 import { ApiResponseDto } from '@/commons/dtos/api-response.dto';
 import { OrganisationMembershipStatusEnum } from '@/database/database.enums';
+import { uuidv7 } from 'uuidv7';
 
 @ApiTags('Oraginisation -> Membership')
 @Controller('api/v1/organisation-memberships')
@@ -28,6 +29,37 @@ export class OrganisationMembershipController {
   constructor(
     private readonly organisationMembershipService: OrganisationMembershipService,
   ) {}
+
+  @Patch(':membershipId/remove')
+  @HttpCode(201)
+  @ApiCreatedResponse({
+    description:
+      'Removes organisation membership. Only accessible for the right permissions',
+    summary:
+      'Removes organisation membership. Only accessible for the right permissions',
+    type: ApiResponseDto<{ status: string; suspendedTill: Date }>,
+    example: {
+      data: {
+        membershipId: uuidv7(),
+      },
+      message: 'Organisation member removed successfully',
+      success: true,
+    },
+  })
+  @RequirePermissions(PermissionEnum.ORGANISATION_MEMBERSHIP.DELETE)
+  @UseGuards(CustomJwtAuthGuard, PermissionGuard)
+  async removeMember(
+    @Req() request: ExRequest,
+    @Body() dto: UnsuspendOrganisationMemberDto,
+    @Param('membershipId', new ParseUUIDPipe({ version: '7', optional: false }))
+    membershipId: string,
+  ) {
+    return await this.organisationMembershipService.removeMembership(
+      membershipId,
+      dto,
+      request,
+    );
+  }
 
   @Patch(':membershipId/suspend')
   @HttpCode(201)
