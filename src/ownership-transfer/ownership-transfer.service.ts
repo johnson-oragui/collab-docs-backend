@@ -168,6 +168,7 @@ export class OwnershipTransferService {
 
           const orgAdminRole = await roleRepo.findOne({
             where: { name: RoleEnum.ORG_ADMIN },
+            relations: { permissions: true },
           });
 
           const orgMemberRole = await roleRepo.findOne({
@@ -215,6 +216,25 @@ export class OwnershipTransferService {
           // promote target active member to ORG_ADMIN
           targetMembership.role = orgAdminRole;
           await membershipRepo.save(targetMembership);
+
+          const defaultOrgAdminMemberPermissions = (
+            orgAdminRole.permissions ?? []
+          ).map((permission) =>
+            membershipPermissionRepo.create({
+              membership: targetMembership,
+              permission,
+            }),
+          );
+
+          if (defaultOrgAdminMemberPermissions.length > 0) {
+            await membershipPermissionRepo.upsert(
+              defaultOrgAdminMemberPermissions,
+              {
+                conflictPaths: ['membership', 'permission'],
+                skipUpdateIfNoValuesChanged: true,
+              },
+            );
+          }
 
           // update organisation owner_id
           organisation.owner = targetMembership.user;
@@ -309,7 +329,7 @@ export class OwnershipTransferService {
   }
 
   async getOwnership(request: ExRequest) {
-  try {
+    try {
       const organisationId =
         request.organisation?.id ?? request.decodedUser?.organisationId;
 
@@ -364,7 +384,7 @@ export class OwnershipTransferService {
         },
       });
     } catch (error) {
-return handleServiceMethodError(error, 'Failed to retrieve ownership');
+      return handleServiceMethodError(error, 'Failed to retrieve ownership');
+    }
   }
-}
 }
