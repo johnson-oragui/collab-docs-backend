@@ -149,7 +149,9 @@ describe('PermissionsUtils', () => {
           delete: true,
         },
         organisationOwnershipTransfer: {
-          create: true,
+          read: true,
+        },
+        organisationOwnershipHistory: {
           read: true,
         },
         organisationMembershipPermission: {
