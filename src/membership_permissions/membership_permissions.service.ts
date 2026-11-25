@@ -21,9 +21,13 @@ import {
 } from '@/commons/util/groupPermissionsToNested';
 import { UpdateMembershipPermissionsDto } from './dto/update-membership-permissions.dto';
 import { snakeCaseToCamelcase } from '@/commons/util/snakeCaseToCamelcase';
+import { RedisService } from '@/redis/redis.service';
+import { RedisClientType } from 'redis';
+import { invalidateMemberPermissionCache } from '@/commons/util/invalidatePermissionCacheKey';
 
 @Injectable()
 export class MembershipPermissionsService {
+  redisClient: RedisClientType;
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
@@ -33,7 +37,11 @@ export class MembershipPermissionsService {
 
     @InjectRepository(OrganisationMembershipEntity)
     private readonly membershipRepo: Repository<OrganisationMembershipEntity>,
-  ) {}
+
+    private readonly redisService: RedisService,
+  ) {
+    this.redisClient = this.redisService.getClient();
+  }
 
   async getMembershipPermissions(request: ExRequest, membershipId: string) {
     try {
@@ -216,6 +224,13 @@ export class MembershipPermissionsService {
             .map((r) => r.permission)
             .filter(Boolean);
 
+          await invalidateMemberPermissionCache(
+            this.redisClient,
+            organisationId!,
+            membership.id,
+            membership.user.id,
+          );
+
           await auditRepo.save(
             auditRepo.create({
               actor: request.user ?? null,
@@ -372,6 +387,13 @@ export class MembershipPermissionsService {
             },
             relations: { permission: true },
           });
+
+          await invalidateMemberPermissionCache(
+            this.redisClient,
+            organisationId!,
+            membership.id,
+            membership.user.id,
+          );
 
           const activePermEntities = remainingRows
             .map((r) => r.permission)
