@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   Param,
   ParseUUIDPipe,
@@ -9,7 +10,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { OrganisationNotificationService } from './organisation-notification.service';
 import { CreateNotificationDto } from './dto/create.dto';
 import { type Request as ExRequest } from 'express';
@@ -137,6 +143,45 @@ export class OrganisationNotificationController {
     notificationId: string,
   ) {
     return await this.organisationNotificationService.publishNotification(
+      request,
+      notificationId,
+    );
+  }
+
+  @Delete(':notificationId')
+  @RequireAnyPermission(PermissionEnum.NOTIFICATION.DELETE)
+  @HttpCode(200)
+  @UseGuards(CustomJwtAuthGuard, PermissionGuard)
+  @ApiOperation({
+    summary: 'Deletes a notification scoped to current user Organisation',
+  })
+  @ApiOkResponse({
+    description: 'Notification removed successfully',
+    example: {
+      message: 'Notification removed successfully.',
+      success: true,
+      data: {
+        id: '01a217e4-f055-7484-a8e3-03a23b2c31b6',
+        createdAt: '2026-11-26T12:46:49.409Z',
+        draftExpiresAt: '2026-11-28T12:46:49.429Z',
+        status: 'DRAFT',
+        publishedAt: null,
+        organisationId: '01a217e4-ea3e-71f5-9175-35c1003adac6',
+        title: 'Updated draft title',
+        message: 'Updated draft body',
+        createdByMembershipId: '01a217e4-ea4c-715a-ab44-1133deffbf64',
+      },
+    },
+  })
+  async deleteNotification(
+    @Req() request: ExRequest,
+    @Param(
+      'notificationId',
+      new ParseUUIDPipe({ version: '7', optional: false }),
+    )
+    notificationId: string,
+  ) {
+    return await this.organisationNotificationService.deleteNotification(
       request,
       notificationId,
     );
