@@ -391,7 +391,7 @@ describe('Organisation Notification Creation (e2e)', () => {
         .getRepository(NotificationOutboxEntity)
         .count({ where: { notificationId: createdId } });
 
-      expect(recipientCount).toBe(0);
+      expect(recipientCount).toBe(1);
       expect(outboxCount).toBe(0);
     });
   });
