@@ -5,6 +5,7 @@ import {
   JoinColumn,
   Index,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { CustomBaseEntity } from '../database/base.entity';
 import { UserEntity } from '../user/user.entity';
@@ -16,6 +17,9 @@ import {
 } from '../database/database.enums';
 import { OrganisationMembershipSuspensionHistoryEntity } from '../org_membership_suspension_histories/org_membership_suspension_histories.entity';
 import { MembershipPermissionEntity } from '@/membership_permissions/membership_permissions.entity';
+import { NotificationEntity } from '@/notification/notification.entity';
+import { NotificationRecipientEntity } from '@/notification-recipients/notification-recipients.entity';
+import { NotificationPreferenceEntity } from '@/notification-preference/notification-preference.entity';
 
 @Entity('collabdocs_organisation_memberships')
 @Index(['user', 'organisation'], { unique: true }) // Ensures a user can only belong to an org once
@@ -58,6 +62,27 @@ export class OrganisationMembershipEntity extends CustomBaseEntity {
     { cascade: true },
   )
   declare suspensionHistories: OrganisationMembershipSuspensionHistoryEntity[];
+
+  @OneToMany(
+    () => NotificationEntity,
+    (createdNotifications) => createdNotifications.createdByMembership,
+    { cascade: true },
+  )
+  declare createdNotifications: NotificationEntity[];
+
+  @OneToMany(
+    () => NotificationRecipientEntity,
+    (receivedNotifications) => receivedNotifications.membership,
+    { cascade: true },
+  )
+  declare receivedNotifications: NotificationRecipientEntity[];
+
+  @OneToOne(
+    () => NotificationPreferenceEntity,
+    (notificationPreference) => notificationPreference.membership,
+    { cascade: true },
+  )
+  declare notificationPreference: NotificationPreferenceEntity;
 
   @OneToMany(
     () => MembershipPermissionEntity,
