@@ -26,6 +26,7 @@ import { PermissionGuard } from '@/commons/guards/permission.guard';
 import { uuidv7 } from 'uuidv7';
 import { NotificationStatusEnum } from '@/database/database.enums';
 import { UpdateNotificationDto } from './dto/update.dto';
+import { MarkNotificationDto } from './dto/mark-dto';
 
 @ApiTags('Organisation -> Notifications')
 @Controller('api/v1/organisation-notifications')
@@ -184,6 +185,57 @@ export class OrganisationNotificationController {
     return await this.organisationNotificationService.deleteNotification(
       request,
       notificationId,
+    );
+  }
+
+  @Patch(':notificationId/members')
+  @RequireAnyPermission(PermissionEnum.NOTIFICATION.READ)
+  @HttpCode(201)
+  @UseGuards(CustomJwtAuthGuard, PermissionGuard)
+  @ApiOperation({
+    summary:
+      'Mark notification(s) scoped to current user Organisationas read/unread',
+  })
+  @ApiCreatedResponse({
+    description: 'Notification updated successfully',
+    example: {
+      message: 'Notification updated successfully.',
+      success: true,
+      data: {
+        primary: {
+          notificationId: uuidv7(),
+          recipientId: uuidv7(),
+          membershipId: uuidv7(),
+          readAt: new Date(),
+          isRead: true,
+          alreadyInRequestedState: true,
+        },
+        items: [
+          {
+            notificationId: uuidv7(),
+            recipientId: uuidv7(),
+            membershipId: uuidv7(),
+            readAt: new Date(),
+            isRead: true,
+            alreadyInRequestedState: true,
+          },
+        ],
+      },
+    },
+  })
+  async markNotificationAsRead(
+    @Req() request: ExRequest,
+    @Param(
+      'notificationId',
+      new ParseUUIDPipe({ version: '7', optional: false }),
+    )
+    notificationId: string,
+    @Body() dto: MarkNotificationDto,
+  ) {
+    return await this.organisationNotificationService.markNotificationAsRead(
+      request,
+      notificationId,
+      dto,
     );
   }
 }
