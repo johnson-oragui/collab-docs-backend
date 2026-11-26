@@ -38,6 +38,116 @@ export class OrganisationNotificationService {
     // private readonly notificationOutboxDispatcher?: NotificationOutboxDispatcherService,
   ) {}
 
+  async markAllNotificationsAsRead(request: ExRequest, membershipId: string) {
+    try {
+      const { organisationId, actorUserId } =
+        this.getOrganisationAndActorId(request);
+
+      const membershipRepo = this.dataSource.getRepository(
+        OrganisationMembershipEntity,
+      );
+
+      const membership = await membershipRepo.findOne({
+        where: { id: membershipId },
+        relations: { user: true, organisation: true },
+      });
+
+      if (!membership) {
+        throw new HttpException({ message: 'Membership not found' }, 404);
+      }
+
+      const membershipOrgId =
+        membership.organisation?.id ?? (membership as any).organisationId;
+      const membershipUserId =
+        membership.user?.id ?? (membership as any).userId;
+
+      if (membershipOrgId !== organisationId) {
+        throw new HttpException(
+          { message: 'Membership does not belong to the active organisation' },
+          403,
+        );
+      }
+
+      if (membershipUserId !== actorUserId) {
+        throw new HttpException(
+          {
+            message:
+              'You are not authorised to mark notifications as read for another membership',
+          },
+          403,
+        );
+      }
+
+      if (
+        membership.status !== OrganisationMembershipStatusEnum.ACTIVE ||
+        (membership as any).isDeleted === true
+      ) {
+        throw new HttpException({ message: 'Membership is not active' }, 403);
+      }
+
+      const now = new Date();
+      const recipientMetadata = this.dataSource.getMetadata(
+        NotificationRecipientEntity,
+      );
+      const recipientTable = recipientMetadata.tableName;
+      const readAtCol =
+        recipientMetadata.findColumnWithPropertyName('readAt')?.databaseName ??
+        'read_at';
+      const membershipIdCol =
+        recipientMetadata.findColumnWithPropertyName('membershipId')
+          ?.databaseName ?? 'membership_id';
+      const notificationIdCol =
+        recipientMetadata.findColumnWithPropertyName('notificationId')
+          ?.databaseName ?? 'notification_id';
+
+      const { affected: affectedRows } = await this.dataSource
+        .createQueryBuilder()
+        .update(NotificationRecipientEntity)
+        .set({ readAt: now })
+        .where(
+          `${recipientTable}.${membershipIdCol} = :membershipId
+           AND ${recipientTable}.${readAtCol} IS NULL
+           AND EXISTS (
+             SELECT 1
+             FROM collabdocs_notifications notification
+             WHERE notification.id = ${recipientTable}.${notificationIdCol}
+               AND notification.organisation_id = :organisationId
+               AND notification.status = :status
+           )`,
+          {
+            membershipId: membership.id,
+            organisationId,
+            status: NotificationStatusEnum.PUBLISHED,
+          },
+        )
+        .execute();
+
+      const updatedCount = typeof affectedRows === 'number' ? affectedRows : 0;
+
+      this.logger.debug(
+        `Marked ${updatedCount} notification(s) as read for membership ${membership.id}`,
+      );
+
+      return new ApiResponseDto({
+        message:
+          updatedCount > 0
+            ? `Marked ${updatedCount} notification(s) as read`
+            : 'No unread notifications to mark as read',
+        success: true,
+        data: {
+          membershipId: membership.id,
+          updatedCount,
+          readAt: updatedCount > 0 ? now : null,
+        },
+      });
+    } catch (error) {
+      return handleServiceMethodError(
+        error,
+        'Failed to mark all notifications as read',
+      );
+    }
+  }
+
   async markNotificationAsRead(
     request: ExRequest,
     notificationId: string,
