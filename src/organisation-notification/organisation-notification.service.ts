@@ -24,6 +24,7 @@ import { handleServiceMethodError } from '@/commons/util/errorHandler';
 import { UpdateNotificationDto } from './dto/update.dto';
 import { GQLPaginationMetaModel } from '@/commons/dtos/pagination-meta.dto';
 import { GetNotificationsQueryInputDto } from './graphql/dto/get-notifications-input.dto';
+import { MarkNotificationDto } from './dto/mark-dto';
 
 @Injectable()
 export class OrganisationNotificationService {
@@ -36,6 +37,223 @@ export class OrganisationNotificationService {
     @InjectDataSource() private readonly dataSource: DataSource,
     // private readonly notificationOutboxDispatcher?: NotificationOutboxDispatcherService,
   ) {}
+
+  async markNotificationAsRead(
+    request: ExRequest,
+    notificationId: string,
+    dto: MarkNotificationDto,
+  ) {
+    try {
+      const { organisationId, actorUserId } =
+        this.getOrganisationAndActorId(request);
+
+      const targetIds = Array.from(
+        new Set([notificationId, ...dto.notificationIds]),
+      );
+
+      const result = await this.dataSource.transaction(
+        async (entityManager) => {
+          const membershipRepo = entityManager.getRepository(
+            OrganisationMembershipEntity,
+          );
+          const notificationRepo =
+            entityManager.getRepository(NotificationEntity);
+          const recipientRepo = entityManager.getRepository(
+            NotificationRecipientEntity,
+          );
+
+          const actorMembership =
+            request.membership ??
+            (await membershipRepo.findOne({
+              where: {
+                user: { id: actorUserId },
+                organisation: { id: organisationId },
+                status: OrganisationMembershipStatusEnum.ACTIVE,
+                isDeleted: false,
+              },
+              select: { id: true, status: true },
+            }));
+
+          if (!actorMembership) {
+            throw new HttpException(
+              {
+                message:
+                  'An active membership in the organisation is required to update notification read state',
+              },
+              403,
+            );
+          }
+
+          const primaryNotification = await notificationRepo.findOne({
+            where: { id: notificationId },
+            select: {
+              id: true,
+              organisationId: true,
+              status: true,
+            },
+          });
+
+          if (
+            !primaryNotification ||
+            primaryNotification.organisationId !== organisationId
+          ) {
+            throw new HttpException({ message: 'Notification not found' }, 404);
+          }
+
+          if (primaryNotification.status !== NotificationStatusEnum.PUBLISHED) {
+            throw new HttpException(
+              {
+                message:
+                  'Read state can only be updated for published notifications',
+              },
+              400,
+            );
+          }
+
+          const primaryRecipient = await recipientRepo.findOne({
+            where: {
+              notificationId,
+              membershipId: actorMembership.id,
+            },
+            lock: { mode: 'pessimistic_write' },
+          });
+
+          if (!primaryRecipient) {
+            throw new HttpException(
+              {
+                message:
+                  'No recipient record exists for this membership on the specified notification',
+              },
+              404,
+            );
+          }
+
+          const now = new Date();
+          const batchRecipientIds =
+            targetIds.length > 1
+              ? await recipientRepo
+                  .createQueryBuilder('recipient')
+                  .innerJoin('recipient.notification', 'notification')
+                  .where('recipient.membershipId = :membershipId', {
+                    membershipId: actorMembership.id,
+                  })
+                  .andWhere('recipient.notificationId IN (:...ids)', {
+                    ids: targetIds,
+                  })
+                  .andWhere('notification.organisationId = :organisationId', {
+                    organisationId,
+                  })
+                  .andWhere('notification.status = :status', {
+                    status: NotificationStatusEnum.PUBLISHED,
+                  })
+                  .getMany()
+              : [primaryRecipient];
+
+          const updatedItems: Array<{
+            notificationId: string;
+            recipientId: string;
+            membershipId: string;
+            readAt: Date | null;
+            isRead: boolean;
+            alreadyInRequestedState: boolean;
+          }> = [];
+
+          for (const recipient of batchRecipientIds) {
+            const targetRow =
+              recipient.id === primaryRecipient.id
+                ? primaryRecipient
+                : recipient;
+
+            if (dto.read) {
+              if (targetRow.readAt !== null) {
+                updatedItems.push({
+                  notificationId: targetRow.notificationId,
+                  recipientId: targetRow.id,
+                  membershipId: targetRow.membershipId,
+                  readAt: targetRow.readAt,
+                  isRead: true,
+                  alreadyInRequestedState: true,
+                });
+                continue;
+              }
+
+              targetRow.readAt = now;
+              await recipientRepo.save(targetRow);
+
+              updatedItems.push({
+                notificationId: targetRow.notificationId,
+                recipientId: targetRow.id,
+                membershipId: targetRow.membershipId,
+                readAt: targetRow.readAt,
+                isRead: true,
+                alreadyInRequestedState: false,
+              });
+            } else {
+              if (targetRow.readAt === null) {
+                updatedItems.push({
+                  notificationId: targetRow.notificationId,
+                  recipientId: targetRow.id,
+                  membershipId: targetRow.membershipId,
+                  readAt: null,
+                  isRead: false,
+                  alreadyInRequestedState: true,
+                });
+                continue;
+              }
+
+              targetRow.readAt = null;
+              await recipientRepo.save(targetRow);
+
+              updatedItems.push({
+                notificationId: targetRow.notificationId,
+                recipientId: targetRow.id,
+                membershipId: targetRow.membershipId,
+                readAt: null,
+                isRead: false,
+                alreadyInRequestedState: false,
+              });
+            }
+          }
+
+          const primaryState = updatedItems.find(
+            (item) => item.notificationId === notificationId,
+          )!;
+
+          return {
+            primary: primaryState,
+            items: updatedItems,
+          };
+        },
+      );
+
+      this.logger.debug(
+        `Updated read=${dto.read} for membership ${result.primary.membershipId} on notification ${notificationId}`,
+      );
+
+      const message = dto.read
+        ? result.primary.alreadyInRequestedState
+          ? 'Notification is already marked as read'
+          : 'Notification marked as read'
+        : result.primary.alreadyInRequestedState
+          ? 'Notification is already marked as unread'
+          : 'Notification marked as unread';
+
+      return new ApiResponseDto({
+        message,
+        success: true,
+        data: {
+          ...result.primary,
+          updatedCount: result.items.length,
+          items: result.items,
+        },
+      });
+    } catch (error) {
+      return handleServiceMethodError(
+        error,
+        'Failed to update notification read state',
+      );
+    }
+  }
 
   async getMembershipNotifications(
     request: ExRequest,
