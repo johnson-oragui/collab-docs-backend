@@ -10,6 +10,8 @@ import { OrganisationMembershipService } from './organisation-memberships.servic
 import { OrganisationMembershipController } from './organisation-memberships.controller';
 import { OrganisationMembershipResolver } from './graphql/resolver';
 import { EmailOutboxModule } from '@/email-outbox/email-outbox.module';
+import { NotificationRecipientEntity } from '@/notification-recipients/notification-recipients.entity';
+import { NotificationEntity } from '@/notification/notification.entity';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { EmailOutboxModule } from '@/email-outbox/email-outbox.module';
       OrganisationEntity,
       OrganisationMembershipSuspensionHistoryEntity,
       OrganisationMembershipInvitationEntity,
+      NotificationRecipientEntity,
+      NotificationEntity,
     ]),
     EmailOutboxModule,
   ],
