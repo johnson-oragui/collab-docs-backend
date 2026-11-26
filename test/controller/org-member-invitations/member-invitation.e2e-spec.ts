@@ -384,7 +384,7 @@ describe('Organisation-Invitations (e2e)', () => {
       expect(invitation!.status).toBe(InvitationStatusEnum.PENDING);
       expect(invitation!.token).toBeTruthy();
       expect(invitation!.expiresAt.getTime()).toBeGreaterThan(Date.now());
-      expect(invitation?.permissions).toHaveLength(19);
+      expect(invitation?.permissions).toHaveLength(20);
     });
 
     it('should invite a new user and persist PENDING invitation, token hash, and audit log, have no permissions', async () => {

@@ -154,6 +154,13 @@ describe('PermissionsUtils', () => {
         organisationOwnershipHistory: {
           read: true,
         },
+        notification: {
+          create: true,
+          read: true,
+          update: true,
+          delete: true,
+          publish: true,
+        },
         organisationMembershipPermission: {
           create: true,
           read: true,

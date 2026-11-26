@@ -10,7 +10,7 @@ declare global {
       organisation?: OrganisationEntity | null;
       authType?: TAuthType | null;
       decodedUser: TDecodedUser | null;
-      membership: OrganisationMembershipEntity | null;
+      membership?: OrganisationMembershipEntity | null;
     }
   }
 }

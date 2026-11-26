@@ -25,6 +25,7 @@ import {
 import { PasswordService } from '@/password/password.service';
 import { OrganisationMembershipSuspensionHistoryEntity } from '@/org_membership_suspension_histories/org_membership_suspension_histories.entity';
 import { generateRandomIPv4 } from '@/commons/util/generateRandomIPv4';
+import { runGraphql } from '@/test/fixtures/run-graphql';
 
 const GET_ORGANISATION_MEMBERSHIPS_QUERY = `
   query GetOrganisationMemberships($filter: GetOrganisationMembershipsInput) {
@@ -206,20 +207,6 @@ describe('Organisation-Memberships Query (e2e)', () => {
     };
   };
 
-  const runGraphql = async (
-    query: string,
-    variables?: Record<string, unknown>,
-    accessToken?: string,
-  ) => {
-    const req = http
-      .post('/api/graphql')
-      .set('X-Forwarded-For', generateRandomIPv4());
-    if (accessToken) {
-      req.set('Authorization', `Bearer ${accessToken}`);
-    }
-    return req.send({ query, variables });
-  };
-
   beforeAll(async () => {
     app = await createE2eApp();
     http = createHttpClient(app);
@@ -399,7 +386,7 @@ describe('Organisation-Memberships Query (e2e)', () => {
 
   describe('Authentication & Tenant Isolation', () => {
     it('should reject unauthenticated requests', async () => {
-      const res = await runGraphql(GET_ORGANISATION_MEMBERSHIPS_QUERY, {
+      const res = await runGraphql(http, GET_ORGANISATION_MEMBERSHIPS_QUERY, {
         filter: { page: 1, limit: 10 },
       });
 
@@ -410,6 +397,7 @@ describe('Organisation-Memberships Query (e2e)', () => {
 
     it('should only return memberships belonging to the authenticated user organisation', async () => {
       const res = await runGraphql(
+        http,
         GET_ORGANISATION_MEMBERSHIPS_QUERY,
         { filter: { id: activeMember.membershipId } },
         secondOrgAccessToken,
@@ -431,6 +419,7 @@ describe('Organisation-Memberships Query (e2e)', () => {
   describe('Filtering & Pagination', () => {
     it('should filter memberships by id', async () => {
       const res = await runGraphql(
+        http,
         GET_ORGANISATION_MEMBERSHIPS_QUERY,
         { filter: { id: activeMember.membershipId } },
         ownerAccessToken,
@@ -448,6 +437,7 @@ describe('Organisation-Memberships Query (e2e)', () => {
 
     it('should filter memberships by memberEmail', async () => {
       const res = await runGraphql(
+        http,
         GET_ORGANISATION_MEMBERSHIPS_QUERY,
         { filter: { memberEmail: pendingMember.email } },
         ownerAccessToken,
@@ -465,6 +455,7 @@ describe('Organisation-Memberships Query (e2e)', () => {
 
     it('should filter memberships by status', async () => {
       const res = await runGraphql(
+        http,
         GET_ORGANISATION_MEMBERSHIPS_QUERY,
         {
           filter: {
@@ -496,6 +487,7 @@ describe('Organisation-Memberships Query (e2e)', () => {
       const to = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString();
 
       const res = await runGraphql(
+        http,
         GET_ORGANISATION_MEMBERSHIPS_QUERY,
         {
           filter: {
@@ -519,6 +511,7 @@ describe('Organisation-Memberships Query (e2e)', () => {
 
     it('should paginate results with page, limit, and meta fields', async () => {
       const res = await runGraphql(
+        http,
         GET_ORGANISATION_MEMBERSHIPS_QUERY,
         {
           filter: {

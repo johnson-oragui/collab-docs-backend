@@ -19,6 +19,10 @@ import { EmailOutboxEntity } from '@/email-outbox/email.entity';
 import { InvitationPermissionEntity } from '@/invitation_permissions/invitation_permissions.entity';
 import { MembershipPermissionEntity } from '@/membership_permissions/membership_permissions.entity';
 import { OrganisationAuditEntity } from '@/organisation_audit/organisation_audit.entity';
+import { NotificationEntity } from '@/notification/notification.entity';
+import { NotificationOutboxEntity } from '@/notification-outbox/notification-outbox.entity';
+import { NotificationPreferenceEntity } from '@/notification-preference/notification-preference.entity';
+import { NotificationRecipientEntity } from '@/notification-recipients/notification-recipients.entity';
 
 @Module({
   imports: [
@@ -44,6 +48,10 @@ import { OrganisationAuditEntity } from '@/organisation_audit/organisation_audit
       InvitationPermissionEntity,
       MembershipPermissionEntity,
       OrganisationAuditEntity,
+      NotificationEntity,
+      NotificationOutboxEntity,
+      NotificationPreferenceEntity,
+      NotificationRecipientEntity,
     ]),
   ],
   exports: [

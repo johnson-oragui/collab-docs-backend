@@ -38,3 +38,10 @@ export const ActionEnum = Object.freeze({
 } as const);
 
 export type TActionEnum = (typeof ActionEnum)[keyof typeof ActionEnum];
+export const CreatableNotificationStatusEnum = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+} as const;
+
+export type TCreatableNotificationStatusEnum =
+  (typeof CreatableNotificationStatusEnum)[keyof typeof CreatableNotificationStatusEnum];

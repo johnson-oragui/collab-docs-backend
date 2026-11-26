@@ -98,6 +98,13 @@ export const PermissionEnum = {
   AUDIT: {
     READ: 'audit:read',
   },
+  NOTIFICATION: {
+    CREATE: 'notification:create',
+    READ: 'notification:read',
+    UPDATE: 'notification:update',
+    DELETE: 'notification:delete',
+    PUBLISH: 'notification:publish',
+  },
 } as const;
 
 export type TPermissionEnum = {
@@ -182,6 +189,13 @@ export const DEFAULT_ORG_ADMIN_PERMISSION_ENUM = {
   AUDIT: {
     READ: 'audit:read',
   },
+  NOTIFICATION: {
+    CREATE: 'notification:create',
+    READ: 'notification:read',
+    UPDATE: 'notification:update',
+    DELETE: 'notification:delete',
+    PUBLISH: 'notification:publish',
+  },
 } as const;
 
 export const DEFAULT_ORG_SUB_ADMIN_PERMISSION_ENUM = {
@@ -236,6 +250,13 @@ export const DEFAULT_ORG_SUB_ADMIN_PERMISSION_ENUM = {
   ROLE: {
     READ: 'role:read',
   },
+  NOTIFICATION: {
+    CREATE: 'notification:create',
+    READ: 'notification:read',
+    UPDATE: 'notification:update',
+    DELETE: 'notification:delete',
+    PUBLISH: 'notification:publish',
+  },
 } as const;
 
 export const DEFAULT_ORG_MEMBER_PERMISSION_ENUM = {
@@ -278,6 +299,9 @@ export const DEFAULT_ORG_MEMBER_PERMISSION_ENUM = {
   },
   ROLE: {
     READ: 'role:read',
+  },
+  NOTIFICATION: {
+    READ: 'notification:read',
   },
 } as const;
 
