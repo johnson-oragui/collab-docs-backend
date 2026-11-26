@@ -22,15 +22,189 @@ import {
 import { ApiResponseDto } from '@/commons/dtos/api-response.dto';
 import { handleServiceMethodError } from '@/commons/util/errorHandler';
 import { UpdateNotificationDto } from './dto/update.dto';
+import { GQLPaginationMetaModel } from '@/commons/dtos/pagination-meta.dto';
+import { GetNotificationsQueryInputDto } from './graphql/dto/get-notifications-input.dto';
 
 @Injectable()
 export class OrganisationNotificationService {
+  private readonly DEFAULT_PAGE = 1;
+  private readonly DEFAULT_LIMIT = 20;
+  private readonly MAX_LIMIT = 100;
   private readonly logger = new Logger(OrganisationNotificationService.name);
   private readonly DRAFT_RETENTION_MS = 2 * 24 * 60 * 60 * 1000; // 2 days default
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     // private readonly notificationOutboxDispatcher?: NotificationOutboxDispatcherService,
   ) {}
+
+  async getMembershipNotifications(
+    request: ExRequest,
+    query: GetNotificationsQueryInputDto,
+  ) {
+    try {
+      const { organisationId, actorUserId } =
+        this.getOrganisationAndActorId(request);
+
+      const rawPage = query?.page ?? this.DEFAULT_PAGE;
+      const rawLimit = query?.limit ?? this.DEFAULT_LIMIT;
+
+      if (!Number.isInteger(rawPage) || rawPage < 1) {
+        throw new HttpException(
+          {
+            message:
+              'Page must be a positive integer greater than or equal to 1',
+          },
+          400,
+        );
+      }
+
+      if (!Number.isInteger(rawLimit) || rawLimit < 1) {
+        throw new HttpException(
+          {
+            message:
+              'Limit must be a positive integer greater than or equal to 1',
+          },
+          400,
+        );
+      }
+
+      const page = rawPage;
+      const limit = Math.min(rawLimit, this.MAX_LIMIT);
+      const offset = (page - 1) * limit;
+
+      const membershipRepo = this.dataSource.getRepository(
+        OrganisationMembershipEntity,
+      );
+
+      let targetMembership: OrganisationMembershipEntity | null = null;
+
+      if (query?.membershipId) {
+        targetMembership = await membershipRepo.findOne({
+          where: { id: query.membershipId },
+          relations: { user: true, organisation: true },
+        });
+
+        if (!targetMembership) {
+          throw new HttpException({ message: 'Membership not found' }, 404);
+        }
+
+        const membershipOrgId =
+          targetMembership.organisation?.id ??
+          (targetMembership as any).organisationId;
+        const membershipUserId =
+          targetMembership.user?.id ?? (targetMembership as any).userId;
+
+        if (membershipOrgId !== organisationId) {
+          throw new HttpException(
+            {
+              message: 'Membership does not belong to the active organisation',
+            },
+            403,
+          );
+        }
+
+        if (membershipUserId !== actorUserId) {
+          throw new HttpException(
+            {
+              message:
+                'You are not authorised to read notifications for another member',
+            },
+            403,
+          );
+        }
+
+        if (
+          targetMembership.status !== OrganisationMembershipStatusEnum.ACTIVE ||
+          (targetMembership as any).isDeleted === true
+        ) {
+          throw new HttpException({ message: 'Membership is not active' }, 403);
+        }
+      } else {
+        targetMembership = await membershipRepo.findOne({
+          where: {
+            user: { id: actorUserId },
+            organisation: { id: organisationId },
+            status: OrganisationMembershipStatusEnum.ACTIVE,
+            isDeleted: false,
+          },
+        });
+
+        if (!targetMembership) {
+          throw new HttpException(
+            {
+              message:
+                'Active membership in the current organisation not found',
+            },
+            404,
+          );
+        }
+      }
+
+      const qb = this.dataSource
+        .getRepository(NotificationRecipientEntity)
+        .createQueryBuilder('recipient')
+        .innerJoinAndSelect('recipient.notification', 'notification')
+        .where('recipient.membershipId = :membershipId', {
+          membershipId: targetMembership.id,
+        })
+        .andWhere('notification.organisationId = :organisationId', {
+          organisationId,
+        })
+        .andWhere('notification.status = :status', {
+          status: NotificationStatusEnum.PUBLISHED,
+        });
+
+      if (query?.unreadOnly) {
+        qb.andWhere('recipient.readAt IS NULL');
+      }
+
+      if (query?.type) {
+        qb.andWhere('notification.type = :type', { type: query.type });
+      }
+
+      qb.orderBy('notification.publishedAt', 'DESC', 'NULLS LAST')
+        .addOrderBy('notification.id', 'DESC')
+        .skip(offset)
+        .take(limit);
+
+      const [rows, total] = await qb.getManyAndCount();
+
+      const items = rows.map((row) => ({
+        id: row.notification.id,
+        recipientId: row.id,
+        membershipId: row.membershipId,
+        title: row.notification.title,
+        message: row.notification.message,
+        type: row.notification.type,
+        publishedAt: row.notification.publishedAt,
+        readAt: row.readAt,
+        isRead: Boolean(row.readAt),
+      }));
+
+      const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+
+      const meta = new GQLPaginationMetaModel({
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1 && totalPages > 0,
+      });
+
+      return {
+        success: true,
+        message: 'Membership notifications retrieved successfully',
+        data: items,
+        meta,
+      };
+    } catch (error) {
+      return handleServiceMethodError(
+        error,
+        'Failed to retrieve membership notifications',
+      );
+    }
+  }
 
   async createNotification(dto: CreateNotificationDto, request: ExRequest) {
     try {
