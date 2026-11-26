@@ -238,4 +238,33 @@ export class OrganisationNotificationController {
       dto,
     );
   }
+
+  @Patch('memberships/:membershipId/read-all')
+  @HttpCode(201)
+  @UseGuards(CustomJwtAuthGuard, PermissionGuard)
+  @RequireAnyPermission(PermissionEnum.NOTIFICATION.READ)
+  @ApiOperation({
+    summary: 'Mark all unread published notifications as read for a membership',
+  })
+  @ApiOkResponse({
+    description: 'Unread notifications marked as read',
+    example: {
+      message: `Marked 32 notification(s) as read`,
+      success: true,
+      data: {
+        membershipId: uuidv7(),
+        updatedCount: 32,
+        readAt: new Date(),
+      },
+    },
+  })
+  async markAllNotificationsAsRead(
+    @Param('membershipId', ParseUUIDPipe) membershipId: string,
+    @Req() request: ExRequest,
+  ) {
+    return await this.organisationNotificationService.markAllNotificationsAsRead(
+      request,
+      membershipId,
+    );
+  }
 }
