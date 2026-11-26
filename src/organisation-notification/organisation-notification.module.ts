@@ -5,6 +5,7 @@ import { NotificationModule } from '@/notification/notification.module';
 import { Module } from '@nestjs/common';
 import { OrganisationNotificationService } from './organisation-notification.service';
 import { OrganisationNotificationController } from './organisation-notification.controller';
+import { OrganisationNotificationsResolver } from './graphql/organisation-notification.resolver';
 
 @Module({
   imports: [
@@ -13,7 +14,10 @@ import { OrganisationNotificationController } from './organisation-notification.
     NotificationPreferenceModule,
     NotificationRecipientModule,
   ],
-  providers: [OrganisationNotificationService],
+  providers: [
+    OrganisationNotificationService,
+    OrganisationNotificationsResolver,
+  ],
   controllers: [OrganisationNotificationController],
 })
 export class OrganisationNotificationModule {}

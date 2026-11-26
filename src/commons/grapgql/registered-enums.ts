@@ -1,4 +1,5 @@
 import {
+  NotificationTypeEnum,
   OrganisationMembershipStatusEnum,
   OrganisationStatusEnum,
   RoleEnum,
@@ -31,6 +32,11 @@ export function registerGraphqlEnums(): void {
   registerEnumType(ActionEnum, {
     name: 'SuspensionHistoryActionEnum',
     description: 'Action recorded in membership suspension history.',
+  });
+
+  registerEnumType(NotificationTypeEnum, {
+    name: 'NotificationTypeEnum',
+    description: 'Type of Notification.',
   });
 
   isRegistered = true;
