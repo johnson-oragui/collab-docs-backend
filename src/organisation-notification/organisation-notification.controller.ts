@@ -1,0 +1,144 @@
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { OrganisationNotificationService } from './organisation-notification.service';
+import { CreateNotificationDto } from './dto/create.dto';
+import { type Request as ExRequest } from 'express';
+import { RequireAnyPermission } from '@/commons/decorators/require-permissions.decorator';
+import { PermissionEnum } from '@/permissions/permission.registry';
+import { CustomJwtAuthGuard } from '@/commons/guards/jwt.auth.guard';
+import { PermissionGuard } from '@/commons/guards/permission.guard';
+import { uuidv7 } from 'uuidv7';
+import { NotificationStatusEnum } from '@/database/database.enums';
+import { UpdateNotificationDto } from './dto/update.dto';
+
+@ApiTags('Organisation -> Notifications')
+@Controller('api/v1/organisation-notifications')
+export class OrganisationNotificationController {
+  constructor(
+    private readonly organisationNotificationService: OrganisationNotificationService,
+  ) {}
+
+  @Post()
+  @RequireAnyPermission(PermissionEnum.NOTIFICATION.CREATE)
+  @HttpCode(201)
+  @UseGuards(CustomJwtAuthGuard, PermissionGuard)
+  @ApiOperation({
+    summary:
+      'Creates a notification scoped to current user Organisation. Drafted Notifications expires and removed after two(2) days of remaining as Draft',
+  })
+  @ApiCreatedResponse({
+    description: 'Notification created successfully',
+    example: {
+      message: 'Notification created successfully.',
+      success: true,
+      data: {
+        id: uuidv7(),
+        createdAt: new Date(),
+        draftExpiresAt: new Date(),
+        publishedAt: new Date(),
+        status: NotificationStatusEnum.PUBLISHED,
+        organisationId: uuidv7(),
+        createdByMembershipId: uuidv7(),
+      },
+    },
+  })
+  async createNotification(
+    @Req() request: ExRequest,
+    @Body() dto: CreateNotificationDto,
+  ) {
+    return await this.organisationNotificationService.createNotification(
+      dto,
+      request,
+    );
+  }
+
+  @Patch(':notificationId')
+  @RequireAnyPermission(PermissionEnum.NOTIFICATION.UPDATE)
+  @HttpCode(201)
+  @UseGuards(CustomJwtAuthGuard, PermissionGuard)
+  @ApiOperation({
+    summary: 'Updates a notification scoped to current user Organisation',
+  })
+  @ApiCreatedResponse({
+    description: 'Notification updated successfully',
+    example: {
+      message: 'Notification updated successfully.',
+      success: true,
+      data: {
+        id: '01a217e4-f055-7484-a8e3-03a23b2c31b6',
+        createdAt: '2026-11-26T12:46:49.409Z',
+        draftExpiresAt: '2026-11-28T12:46:49.429Z',
+        status: 'DRAFT',
+        publishedAt: null,
+        organisationId: '01a217e4-ea3e-71f5-9175-35c1003adac6',
+        title: 'Updated draft title',
+        message: 'Updated draft body',
+        createdByMembershipId: '01a217e4-ea4c-715a-ab44-1133deffbf64',
+      },
+    },
+  })
+  async updateNotification(
+    @Req() request: ExRequest,
+    @Body() dto: UpdateNotificationDto,
+    @Param(
+      'notificationId',
+      new ParseUUIDPipe({ version: '7', optional: false }),
+    )
+    notificationId: string,
+  ) {
+    return await this.organisationNotificationService.updateNotification(
+      request,
+      dto,
+      notificationId,
+    );
+  }
+
+  @Post(':notificationId/publish')
+  @RequireAnyPermission(PermissionEnum.NOTIFICATION.UPDATE)
+  @HttpCode(201)
+  @UseGuards(CustomJwtAuthGuard, PermissionGuard)
+  @ApiOperation({
+    summary: 'Publishes a notification scoped to current user Organisation',
+  })
+  @ApiCreatedResponse({
+    description: 'Notification published successfully',
+    example: {
+      message: 'Notification published successfully.',
+      success: true,
+      data: {
+        id: '01a217e4-f055-7484-a8e3-03a23b2c31b6',
+        createdAt: '2026-11-26T12:46:49.409Z',
+        draftExpiresAt: '2026-11-28T12:46:49.429Z',
+        status: 'DRAFT',
+        publishedAt: null,
+        organisationId: '01a217e4-ea3e-71f5-9175-35c1003adac6',
+        title: 'Updated draft title',
+        message: 'Updated draft body',
+        createdByMembershipId: '01a217e4-ea4c-715a-ab44-1133deffbf64',
+      },
+    },
+  })
+  async publishNotification(
+    @Req() request: ExRequest,
+    @Param(
+      'notificationId',
+      new ParseUUIDPipe({ version: '7', optional: false }),
+    )
+    notificationId: string,
+  ) {
+    return await this.organisationNotificationService.publishNotification(
+      request,
+      notificationId,
+    );
+  }
+}
