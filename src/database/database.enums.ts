@@ -73,3 +73,35 @@ export const EmailEventTypeEnum = Object.freeze({
 
 export type TEmailEventTypeEnum =
   (typeof EmailEventTypeEnum)[keyof typeof EmailEventTypeEnum];
+
+export const NotificationStatusEnum = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+export type TNotificationStatusEnum =
+  (typeof NotificationStatusEnum)[keyof typeof NotificationStatusEnum];
+
+export const NotificationTypeEnum = {
+  SYSTEM: 'SYSTEM',
+  ANNOUNCEMENT: 'ANNOUNCEMENT',
+  REMINDER: 'REMINDER',
+  ALERT: 'ALERT',
+} as const;
+export type TNotificationTypeEnum =
+  (typeof NotificationTypeEnum)[keyof typeof NotificationTypeEnum];
+
+export const NotificationOutboxStatusEnum = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  DISPATCHED: 'DISPATCHED',
+  FAILED: 'FAILED',
+} as const;
+export type TNotificationOutboxStatusEnum =
+  (typeof NotificationOutboxStatusEnum)[keyof typeof NotificationOutboxStatusEnum];
+
+export const NotificationOutboxEventTypeEnum = {
+  NOTIFICATION_PUBLISHED: 'NOTIFICATION_PUBLISHED',
+} as const;
+export type TNotificationOutboxEventTypeEnum =
+  (typeof NotificationOutboxEventTypeEnum)[keyof typeof NotificationOutboxEventTypeEnum];
