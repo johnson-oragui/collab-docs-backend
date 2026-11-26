@@ -770,10 +770,170 @@ export class OrganisationNotificationService {
     }
   }
 
+  async deleteNotification(request: ExRequest, notificationId: string) {
+    try {
+      const { organisationId } = this.getOrganisationAndActorId(request);
+
+      const existing = await this.dataSource
+        .getRepository(NotificationEntity)
+        .findOne({
+          where: { id: notificationId },
+          select: {
+            id: true,
+            organisationId: true,
+            status: true,
+            publishedAt: true,
+            draftExpiresAt: true,
+          },
+        });
+
+      if (!existing || existing.organisationId !== organisationId) {
+        throw new HttpException({ message: 'Notification not found' }, 404);
+      }
+
+      if (
+        existing.status === NotificationStatusEnum.PUBLISHED ||
+        existing.publishedAt !== null
+      ) {
+        throw new HttpException(
+          {
+            message: 'Published notifications cannot be deleted.',
+          },
+          409,
+        );
+      }
+
+      if (existing.status !== NotificationStatusEnum.DRAFT) {
+        throw new HttpException(
+          {
+            message: `Cannot delete notification with status ${existing.status}. Only DRAFT notifications can be deleted.`,
+          },
+          409,
+        );
+      }
+
+      const now = new Date();
+      if (
+        existing.draftExpiresAt &&
+        existing.draftExpiresAt.getTime() <= now.getTime()
+      ) {
+        await this.dataSource.transaction(async (entityManager) => {
+          const outboxCount = await entityManager
+            .getRepository(NotificationOutboxEntity)
+            .count({ where: { notificationId: existing.id } });
+
+          if (outboxCount > 0) {
+            this.logger.error(
+              `Integrity issue on expired draft ${existing.id}: found ${outboxCount} outbox record(s)`,
+            );
+            throw new HttpException(
+              {
+                message:
+                  'Draft has unexpected outbox records; manual integrity investigation required',
+              },
+              409,
+            );
+          }
+
+          await entityManager
+            .getRepository(NotificationRecipientEntity)
+            .delete({ notificationId: existing.id });
+          await entityManager
+            .getRepository(NotificationEntity)
+            .delete({ id: existing.id });
+        });
+
+        throw new HttpException(
+          { message: 'Draft has expired and has been removed' },
+          410,
+        );
+      }
+
+      await this.dataSource.transaction(async (entityManager) => {
+        const notificationRepo =
+          entityManager.getRepository(NotificationEntity);
+        const recipientRepo = entityManager.getRepository(
+          NotificationRecipientEntity,
+        );
+        const outboxRepo = entityManager.getRepository(
+          NotificationOutboxEntity,
+        );
+
+        const draft = await notificationRepo.findOne({
+          where: { id: notificationId, organisationId },
+          lock: { mode: 'pessimistic_write' },
+        });
+
+        if (!draft) {
+          throw new HttpException({ message: 'Notification not found' }, 404);
+        }
+
+        if (
+          draft.status === NotificationStatusEnum.PUBLISHED ||
+          draft.publishedAt !== null
+        ) {
+          throw new HttpException(
+            {
+              message:
+                'Published notifications cannot be deleted through the draft deletion endpoint',
+            },
+            409,
+          );
+        }
+
+        if (draft.status !== NotificationStatusEnum.DRAFT) {
+          throw new HttpException(
+            {
+              message: `Cannot delete notification with status ${draft.status}`,
+            },
+            409,
+          );
+        }
+
+        const outboxCount = await outboxRepo.count({
+          where: { notificationId: draft.id },
+        });
+        if (outboxCount > 0) {
+          this.logger.error(
+            `Integrity issue on draft ${draft.id}: found ${outboxCount} outbox record(s) before deletion`,
+          );
+          throw new HttpException(
+            {
+              message:
+                'Draft has unexpected outbox records and cannot be deleted automatically',
+            },
+            409,
+          );
+        }
+
+        const existingRecipientCount = await recipientRepo.count({
+          where: { notificationId: draft.id },
+        });
+        if (existingRecipientCount > 0) {
+          this.logger.warn(
+            `Draft ${draft.id} has ${existingRecipientCount} recipient row(s); cleaning up draft associations`,
+          );
+          await recipientRepo.delete({ notificationId: draft.id });
+        }
+
+        await notificationRepo.delete({ id: draft.id });
+      });
+
+      return new ApiResponseDto({
+        message: 'Notification draft deleted successfully',
+        success: true,
+        data: { id: notificationId, deleted: true },
+      });
+    } catch (error) {
+      return handleServiceMethodError(
+        error,
+        'Failed to delete notification draft',
+      );
+    }
+  }
+
   /**
    * Resolves intended membership IDs stored on the draft prior to publication.
-   * Adapt this helper if your draft stores intended recipient IDs in a JSON/array
-   * column or a dedicated draft-recipients relation rather than NotificationRecipientEntity.
    */
   private extractIntendedRecipientIds(
     draft: NotificationEntity,
