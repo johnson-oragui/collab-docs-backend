@@ -8,7 +8,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { OrganisationMembershipService } from './organisation-memberships.service';
 import { CustomJwtAuthGuard } from '@/commons/guards/jwt.auth.guard';
 import { PermissionGuard } from '@/commons/guards/permission.guard';
@@ -24,6 +29,8 @@ import { OrganisationMembershipStatusEnum } from '@/database/database.enums';
 import { uuidv7 } from 'uuidv7';
 
 @ApiTags('Oraginisation -> Membership')
+@ApiBearerAuth('bearer')
+@ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
 @Controller('api/v1/organisation-memberships')
 export class OrganisationMembershipController {
   constructor(

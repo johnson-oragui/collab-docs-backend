@@ -8,6 +8,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -23,6 +25,8 @@ import { RequireAnyPermission } from '@/commons/decorators/require-permissions.d
 import { PermissionEnum } from '@/permissions/permission.registry';
 
 @ApiTags('Organisation -> Ownership -> Transfers')
+@ApiBearerAuth('bearer')
+@ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
 @Controller('api/v1/organisation-ownership')
 export class OwnershipTransferController {
   constructor(

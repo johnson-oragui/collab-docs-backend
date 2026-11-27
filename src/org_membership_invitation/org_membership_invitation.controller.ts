@@ -10,7 +10,13 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { OrganisationmembershipinvitationService } from './org_membership_invitation.service';
 import { InviteOrganisationMemberDto } from './dto/invitation.dto';
 import { type Request as ExRequest } from 'express';
@@ -22,6 +28,8 @@ import { uuidv7 } from 'uuidv7';
 import { GetOrganisationInvitationsQueryDto } from './dto/get-invitations-query.dto';
 
 @ApiTags('Organisation -> Invitations')
+@ApiBearerAuth('bearer')
+@ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
 @Controller('api/v1/organisation-invitations')
 export class OrganisationInvitationController {
   constructor(

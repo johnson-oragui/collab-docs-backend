@@ -17,10 +17,17 @@ import {
   ForgotPasswordResponseDto,
 } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ApiResponseDto } from '@/commons/dtos/api-response.dto';
 
 @ApiTags('AUTHENTICATION -> PASSWORD RECOVERY')
+@ApiBearerAuth('bearer')
+@ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
 @Controller('api/v1/auth/password')
 export class PasswordRecoveryController {
   constructor(
