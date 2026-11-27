@@ -8,7 +8,9 @@ import {
   Res,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiExtraModels,
   ApiHeader,
@@ -138,6 +140,8 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiBearerAuth('bearer')
+  @ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Refresh authentication tokens',
