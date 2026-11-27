@@ -6,7 +6,13 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { type Request as ExRequest } from 'express';
 
 import { OwnershipHistoryService } from './organisation-ownership-history.service';
@@ -18,6 +24,8 @@ import { GetOwnershipHistoryQueryDto } from './dto/get-ownership-history.dto';
 import { uuidv7 } from 'uuidv7';
 
 @ApiTags('Organisation -> Ownership -> Transfers')
+@ApiBearerAuth('bearer')
+@ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
 @Controller('api/v1/organisation-ownership-history')
 export class OwnershipHistoryController {
   constructor(

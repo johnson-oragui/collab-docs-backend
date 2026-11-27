@@ -11,6 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -29,6 +31,8 @@ import { UpdateNotificationDto } from './dto/update.dto';
 import { MarkNotificationDto } from './dto/mark-dto';
 
 @ApiTags('Organisation -> Notifications')
+@ApiBearerAuth('bearer')
+@ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
 @Controller('api/v1/organisation-notifications')
 export class OrganisationNotificationController {
   constructor(

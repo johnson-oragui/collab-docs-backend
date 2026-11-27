@@ -1,5 +1,5 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bullmq';
 
 import { EMAIL_JOB, EMAIL_QUEUE } from './email.constants';
@@ -7,12 +7,14 @@ import { IEmailJobData } from './email.interface';
 
 @Injectable()
 export class EmailService {
+  logger = new Logger(EmailService.name);
   constructor(
     @InjectQueue(EMAIL_QUEUE)
     private readonly emailQueue: Queue<IEmailJobData>,
   ) {}
 
   async enqueueOutboxEmail(outboxId: string): Promise<void> {
+    this.logger.debug(`Enqueued jobId: ${outboxId}`);
     await this.emailQueue.add(
       EMAIL_JOB.SEND,
       { outboxId },

@@ -7,7 +7,13 @@ import {
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiBearerAuth,
+  ApiCookieAuth,
+} from '@nestjs/swagger';
 import { QueryOrganisationAuditsDto } from './dto/query-organisation-audits.dto';
 import { PermissionEnum } from '@/permissions/permission.registry';
 import { RequirePermissions } from '@/commons/decorators/require-permissions.decorator';
@@ -20,6 +26,8 @@ import { CustomJwtAuthGuard } from '@/commons/guards/jwt.auth.guard';
 import { PermissionGuard } from '@/commons/guards/permission.guard';
 
 @ApiTags('Organisation Audits')
+@ApiBearerAuth('bearer')
+@ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
 @Controller('api/v1/organisation-audits')
 export class OrganisationAuditController {
   constructor(private readonly auditService: OrganisationAuditService) {}

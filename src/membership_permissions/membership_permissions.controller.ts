@@ -10,7 +10,14 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { MembershipPermissionsService } from './membership_permissions.service';
 import { CustomJwtAuthGuard } from '@/commons/guards/jwt.auth.guard';
 import { PermissionGuard } from '@/commons/guards/permission.guard';
@@ -22,12 +29,15 @@ import { uuidv7 } from 'uuidv7';
 
 @ApiTags('Organisation -> Membership -> Permissions')
 @Controller('api/v1/organisation-memberships')
+@ApiBearerAuth('bearer')
+@ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
 export class MembershipPermissionsController {
   constructor(
     private readonly membershipPermissionsService: MembershipPermissionsService,
   ) {}
 
   @Get(':membershipId')
+  @ApiOperation({ summary: 'Retrieves Membership Permissions' })
   @ApiOkResponse({
     example: {
       message: 'Permissions retrieved successfully',

@@ -34,6 +34,7 @@ import { PASSWORD_RECOVERY } from '@/password-recovery/password-recovery.constan
 import { PasswordResetTokenEntity } from '@/password-recovery/password-recovery.entity';
 import { GetOrganisationInvitationsQueryDto } from './dto/get-invitations-query.dto';
 import { PaginationMetaDto } from '@/commons/dtos/pagination-meta.dto';
+import { OrganisationEntity } from '@/organisations/organisations.entity';
 
 @Injectable()
 export class OrganisationmembershipinvitationService {
@@ -238,6 +239,8 @@ export class OrganisationmembershipinvitationService {
         const organisationAuditRepository = entityManager.getRepository(
           OrganisationAuditEntity,
         );
+        const organisationRepository =
+          entityManager.getRepository(OrganisationEntity);
 
         const userExists = await userRepository.findOne({
           where: {
@@ -329,7 +332,7 @@ export class OrganisationmembershipinvitationService {
               firstName: dto.firstName,
               requestId,
               invitedBy: { id: request.user!.id },
-              permissionMode: dto.permissionMode,
+              permissionMode: dto.permissionMode ?? 'DEFAULT', // fallback when role is ORG_ADMIN
               status: InvitationStatusEnum.PENDING,
               expiresAt,
               role,
@@ -369,12 +372,27 @@ export class OrganisationmembershipinvitationService {
           }),
         );
 
+        let organisationName = request.organisation?.name;
+
+        if (!organisationName) {
+          organisationName = (
+            await organisationRepository.findOne({
+              where: { id: organisationId },
+              select: { name: true },
+            })
+          )?.name;
+          if (!organisationName) {
+            throw new Error('Organisation missing required "name" field.');
+          }
+        }
+
         const emailPayload =
           this.emailTemplateService.createOrganisationInvitationEmail({
             recipientEmail: dto.email,
             recipientName: dto.firstName,
             actionUrl: resetUrl.toString(),
             expiresIn: `${this.EXPIRY_DAYS} days`,
+            organisationName,
           });
 
         await this.emailOutboxService.create(

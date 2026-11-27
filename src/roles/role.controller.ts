@@ -9,10 +9,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { RoleService } from './role.service';
 
 @ApiTags('ROLES -> PERMISSIONS')
+@ApiBearerAuth('bearer')
+@ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
 @Controller('api/v1/roles-permissions')
 @UseGuards(CustomJwtAuthGuard, PermissionGuard)
 export class RoleController {

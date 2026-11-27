@@ -27,6 +27,7 @@ export class EmailProcessor extends WorkerHost {
   }
 
   async process(job: Job<IEmailJobData>): Promise<void> {
+    this.logger.debug(`Processing JobId: ${job.data.outboxId}`);
     if (job.name !== EMAIL_JOB.SEND) {
       throw new Error(`Unsupported email job: ${job.name}`);
     }

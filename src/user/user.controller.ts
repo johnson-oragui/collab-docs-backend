@@ -1,5 +1,10 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { type Request as ExRequest } from 'express';
 
 import { CustomJwtAuthGuard } from '@/commons/guards/jwt.auth.guard';
@@ -9,6 +14,7 @@ import { ApiResponseDto } from '@/commons/dtos/api-response.dto';
 
 @ApiTags('USERS')
 @ApiBearerAuth('bearer')
+@ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
 @Controller('api/v1/users')
 @UseGuards(CustomJwtAuthGuard)
 export default class UserController {

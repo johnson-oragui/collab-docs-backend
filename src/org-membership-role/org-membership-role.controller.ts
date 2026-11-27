@@ -12,13 +12,20 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { OrganisationMembershipRoleService } from './org-membership-role.service';
 import { type Request as ExRequest } from 'express';
 import { ReassignOrganisationMemberShipRoleDto } from './dto/reassign.role.dto';
 import { uuidv7 } from 'uuidv7';
 
 @ApiTags('Organisation -> Membership -> Roles')
+@ApiBearerAuth('bearer')
+@ApiCookieAuth(process.env.AUTH_COOKIE_NAME)
 @Controller('api/v1/organisation-memberships')
 export class OrganisationMembershipRoleController {
   constructor(

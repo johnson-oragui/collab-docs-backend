@@ -36,6 +36,9 @@ import { registerGraphqlEnums } from './commons/grapgql/registered-enums';
 import { OrganisationMembershipRoleModule } from './org-membership-role/org-membership-role.modul';
 import { OwnershipTransferModule } from './ownership-transfer/ownership-transfer.module';
 import { OrganisationNotificationModule } from './organisation-notification/organisation-notification.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { WebsocketGatewayModule } from './websocket-gateway/websocket-gateway.module';
+import { NotificationModule } from './notification/notification.module';
 
 registerGraphqlEnums();
 
@@ -43,6 +46,7 @@ registerGraphqlEnums();
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnvConfig }),
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     AppGraphQLModule,
     DatabaseModule,
     EmailModule,
@@ -69,6 +73,8 @@ registerGraphqlEnums();
     OrganisationMembershipRoleModule,
     OwnershipTransferModule,
     OrganisationNotificationModule,
+    WebsocketGatewayModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [
