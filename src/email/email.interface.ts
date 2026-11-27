@@ -30,3 +30,22 @@ export interface IEmailInfoTemplateOptions {
   expiresIn?: string;
   info: string;
 }
+
+export interface IEmailRedisLockClient {
+  set(
+    key: string,
+    value: string,
+    expiryMode: 'PX',
+    timeMs: number,
+    setMode: 'NX',
+  ): Promise<string | null>;
+  get(key: string): Promise<string | null>;
+  del(key: string): Promise<number>;
+  eval?(script: string, numKeys: number, ...args: string[]): Promise<unknown>;
+}
+
+export interface IDispatchEmailOutboxResult {
+  skippedDueToLock?: boolean;
+  scannedCount: number;
+  queuedCount: number;
+}
